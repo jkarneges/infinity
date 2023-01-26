@@ -1,4 +1,4 @@
-all: ../../bin/afzconv ../../bin/fixgb ../../bin/gfx2h ../../bin/inspage ../../bin/itemconv ../../bin/j2w ../../bin/pagesize ../../bin/pagify ../../bin/post ../../bin/proctext ../../bin/gbr2bin
+all: ../../bin/afzconv ../../bin/fixgb ../../bin/gfx2h ../../bin/inspage ../../bin/itemconv ../../bin/j2w ../../bin/pagesize ../../bin/pagify ../../bin/post ../../bin/proctext ../../bin/proctxtj ../../bin/gbr2bin
 
 enemy.o: enemy.c
 	gcc -Wall -o enemy.o -c enemy.c
@@ -43,10 +43,14 @@ enemy.o: enemy.c
 	mkdir -p ../../bin
 	gcc -Wall -o ../../bin/proctext proctext.c
 
+../../bin/proctxtj: proctxtj.cpp
+	mkdir -p ../../bin
+	g++ -Wall -o ../../bin/proctxtj proctxtj.cpp
+
 ../../bin/gbr2bin: gbr2bin.cpp
 	mkdir -p ../../bin
 	g++ -Wall -o ../../bin/gbr2bin gbr2bin.cpp
 
 clean:
-	rm -f enemy.o ../../bin/afzconv ../../bin/fixgb ../../bin/gbr2bin ../../bin/gfx2h ../../bin/inspage ../../bin/itemconv ../../bin/j2w ../../bin/pagesize ../../bin/pagify ../../bin/post ../../bin/proctext
+	rm -f enemy.o ../../bin/afzconv ../../bin/fixgb ../../bin/gbr2bin ../../bin/gfx2h ../../bin/inspage ../../bin/itemconv ../../bin/j2w ../../bin/pagesize ../../bin/pagify ../../bin/post ../../bin/proctext ../../bin/proctxtj
 	[ -d ../../bin ] && rmdir ../../bin || /bin/true

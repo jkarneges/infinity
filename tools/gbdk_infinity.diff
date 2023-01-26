@@ -1,7 +1,7 @@
-diff -ru lib.orig/crt0.s lib/crt0.s
---- lib.orig/crt0.s	1999-10-17 22:02:46.000000000 -0700
-+++ lib/crt0.s		2016-07-25 14:14:31.603316904 -0700
-@@ -10,66 +10,99 @@
+diff -urN lib.orig/crt0.s lib/crt0.s
+--- lib.orig/crt0.s	2022-09-17 01:03:17.487086941 -0700
++++ lib/crt0.s	2022-09-17 01:03:31.997086808 -0700
+@@ -10,66 +10,108 @@
  	.org	0x00
  	RET			; Empty function (default for interrupts)
  
@@ -33,6 +33,15 @@ diff -ru lib.orig/crt0.s lib/crt0.s
 +   POP   BC
 +   INC   HL
 +   RET
++   
++_rompage    = 0xF0
++
++   .org  0x30
++   LDH   (_rompage), A                 ;
++   LD    (0x2000), A                   ;
++   RET
++   
++   .org  0x38
 +
 +.globl _vblank_int
  
@@ -144,7 +153,7 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  
  	;; GameBoy Header
  
-@@ -128,41 +161,44 @@
+@@ -128,70 +170,81 @@
  
  	;; ****************************************
  	.org	0x150
@@ -218,7 +227,19 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  
  	;; Turn the screen off
  	CALL	.display_off
-@@ -173,25 +209,25 @@
+ 
+-	;; Initialize the display
++ai_fm_tryagain:                        ; Try to set FAST mode
++  LD    A, #0x01
++  LDH   (0x4D), A                   ; Causes 1x <-> 2x toggle
++  STOP
++  LDH   A, (0x4D)                   ; Is CPU 2x speed?
++  ADD   A, A
++  JR    NC, ai_fm_tryagain
++
++  ;; Initialize the display
+ 	XOR	A
+ 	LDH	(.SCY),A
  	LDH	(.SCX),A
  	LDH	(.STAT),A
  	LDH	(.WY),A
@@ -260,7 +281,7 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  
  	;; Standard color palettes
  	LD	A,#0b11100100	; Grey 3 = 11 (Black)
-@@ -246,9 +282,20 @@
+@@ -246,9 +299,20 @@
  99$:
  	JR	99$		; Wait forever
  
@@ -284,7 +305,7 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  
  	;; ****************************************
  
-@@ -263,6 +310,8 @@
+@@ -263,6 +327,8 @@
  
  __cpu::
  	.ds	0x01		; GB type (GB, PGB, CGB)
@@ -293,12 +314,21 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  .mode::
  	.ds	0x01		; Current mode
  __io_out::
-@@ -292,124 +341,124 @@
+@@ -292,124 +358,124 @@
  
  	;; Call the initialization function for the mode specified in HL
  .set_mode::
 -	LD	A,L
 -	LD	(.mode),A
+-
+-	;; AND to get rid of the extra flags
+-	AND	#0x03
+-	LD	L,A
+-	LD	BC,#.MODE_TABLE
+-	SLA	L		; Multiply mode by 4
+-	SLA	L
+-	ADD	HL,BC
+-	JP	(HL)		; Jump to initialization routine
 +;   LD A,L
 +;   LD (.mode),A
 +;
@@ -311,15 +341,6 @@ diff -ru lib.orig/crt0.s lib/crt0.s
 +;   ADD   HL,BC
 +;   JP (HL)     ; Jump to initialization routine
  
--	;; AND to get rid of the extra flags
--	AND	#0x03
--	LD	L,A
--	LD	BC,#.MODE_TABLE
--	SLA	L		; Multiply mode by 4
--	SLA	L
--	ADD	HL,BC
--	JP	(HL)		; Jump to initialization routine
--
 -	;; Add interrupt routine in BC to the interrupt list
 +;   ;; Add interrupt routine in BC to the interrupt list
  .add_VBL::
@@ -518,7 +539,7 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  1$:				; We wait for the *NEXT* VBL 
  	LDH	A,(.LY)
  	CP	#0x92		; Smaller than or equal to 0x91?
-@@ -424,66 +473,55 @@
+@@ -424,66 +490,55 @@
  	LDH	(.LCDC),A	; Turn off screen
  	RET
  
@@ -629,7 +650,7 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  	
  _enable_interrupts::
  	EI
-@@ -495,68 +533,68 @@
+@@ -495,68 +550,68 @@
  
  .reset::
  _reset::
@@ -748,9 +769,9 @@ diff -ru lib.orig/crt0.s lib/crt0.s
  
  	.area	_HEAP
  _malloc_heap_start::
-diff -ru lib.orig/mul.s lib/mul.s
---- lib.orig/mul.s	1999-10-17 22:02:49.000000000 -0700
-+++ lib/mul.s		2016-07-25 14:14:31.775316898 -0700
+diff -urN lib.orig/mul.s lib/mul.s
+--- lib.orig/mul.s	2022-09-17 01:03:17.487086941 -0700
++++ lib/mul.s	2022-09-17 01:03:36.687086765 -0700
 @@ -1,13 +1,7 @@
 -	.include	"global.s"
 +   .include "global.s"

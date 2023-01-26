@@ -337,8 +337,9 @@ _map_getzone::
 ;   PUSH  AF                            ;
 ;   LD    A, #_rom_page_world
 ;_map_get_join:
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LDHL  SP, #5
    LD    A, (HLD)
@@ -359,8 +360,9 @@ _map_getzone::
    LD    E, (HL)                       ; B = map[A * 128 + B]
 
    POP   AF                            ;
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ;
 
    RET
 
@@ -606,8 +608,9 @@ _owe_blocked::
    PUSH  BC
 
    LD    A, (_owe_tileset_rompage)     ;
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ;
 
    LDHL  SP, #6
    LD    A, (HLI)
@@ -645,8 +648,9 @@ _owe_blocked::
 
    POP   BC
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    RET
 
@@ -784,8 +788,9 @@ _owe_clip::
    PUSH  BC                            ;
 
    LD    A, (_owe_tileset_rompage)     ; set tileset rompage
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ;
 
    LD    A, (HLI)                      ; B=x, C=y, A=direction
    LD    B, A                          ;
@@ -805,8 +810,9 @@ _owe_clip::
 bad_dir:
    POP   BC                            ;
    POP   AF                            ;
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ;
 
    RET                                 ;
 
@@ -938,12 +944,14 @@ owe_spr_update:
    LDH   A, (_rompage)
    PUSH  AF
 
-   LD    HL, #0x2000
+   ;LD    HL, #0x2000
 
    LD    A, #table_page
-   LDH   (_rompage), A
-   LD    (HL), A                           ; Map 4000-7FFF to cur_page
-   LD    H, #0x40
+   ;LDH   (_rompage), A
+   ;LD    (HL), A                           ; Map 4000-7FFF to cur_page
+   ;LD    H, #0x40
+   RST   0x30
+   LD    HL, #0x4000
    LD    A, (HLI)
    LD    D, A
    LD    A, (HLI)
@@ -987,8 +995,9 @@ owe_spr_update:
 
    LD    A, B
    ADD   A, D
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ; page # with sprite
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ; page # with sprite
 
    LD    A, C
    RRCA
@@ -1037,8 +1046,9 @@ owe_spr_write_loop:
    JR    NZ, owe_spr_write_loop
    POP   AF
 
-   LDH   (_rompage), A
-   LD    (0x2000), A                           ; Map 4000-7FFF to cur_page
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                           ; Map 4000-7FFF to cur_page
 
 owe_spr_noupdate:
    POP   BC
@@ -1356,8 +1366,9 @@ Update_VRAM::
    PUSH  AF
 
    LD    A, (_owe_tileset_rompage)     ;
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ;
 
    LD    DE, #0x001E                   ;
 
@@ -1405,8 +1416,9 @@ Update_VRAM::
    LDH   (P_VBK), A                    ;
 
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ;
 
    RET
 
@@ -1673,12 +1685,14 @@ owe_16fill:
    PUSH  AF
    PUSH  BC
 
-   LD    HL, #0x2004
+   ;LD    HL, #0x2004
 
    LD    A, #table_page                ;
-   LDH   (_rompage), A                 ;
-   LD    (HL), A                       ;
-   ADD   HL, HL                        ;
+   ;LDH   (_rompage), A                 ;
+   ;LD    (HL), A                       ;
+   ;ADD   HL, HL                        ;
+   RST   0x30
+   LD    HL, #0x4008
    LD    A, (HLD)                      ; start of maps
    LD    (_owe_map_rompage), A         ;
    DEC   HL                            ;
@@ -1756,8 +1770,9 @@ owe_16fill:
 
    POP   BC
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    A, #1
    LD    (_owe_status), A
@@ -1875,13 +1890,15 @@ _int_owe::
    PUSH  AF
 
    LD    A, #_rom_page_title
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    CALL  _int_owe_real
 
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    JP    _vbl_end

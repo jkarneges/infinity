@@ -103,8 +103,9 @@ _soundlib_setup:
    LDH   (_rampage), A
    LDH   (P_SVBK), A
    LD    A, (song_page)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
 ;----------------------------------------------------------------------------
@@ -195,8 +196,9 @@ _soundlib_deinit:
    LDH   (_rampage), A
    LDH   (P_SVBK), A
    LD    A, E
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
 ;--------------------------------- unlock chan3
@@ -269,8 +271,9 @@ _Audio_Music_Play::
    LDH   (P_SVBK), A
    LD    A, (HLI)
    LD    (song_page), A
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    A, (HL)
 

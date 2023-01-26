@@ -28,6 +28,9 @@ _rom_page_font          = _rom_page_dfs
 _dfs_face::
    .ds   1
 
+_dfs_language::         ; language id: 0=en, 1=fr, 2=jp, 3=es, 4=it, 5=de
+   .ds   1
+
    .area _CODE
 
 big_font_types:
@@ -108,10 +111,10 @@ DFSL_loop:
 ;----------------------------------------------------------------------------
 _dfs_window::
    PUSH  BC
-   LD    A, #165
+   LD    A, #147
    CALL  Calc_PA_in_PT_at_A
 
-   LD    D, #90
+   LD    D, #108
    XOR   A
 DFSC2_loop:
    LD    E, #16
@@ -122,19 +125,19 @@ DFSC2_loop2:
    DEC   D
    JR    NZ, DFSC2_loop
 
-   LD    HL, #0x9C21
-   CALL  make_dfs_bigthing
+   ;LD    HL, #0x9C21
+   ;CALL  make_dfs_bigthing
 
-   LD    HL, #0x9D01
+   LD    HL, #0x9CE1
    CALL  make_dfs_bigthing
 
    POP   BC
    RET
 
 make_dfs_bigthing:
-   LD    A, #165
-   LD    DE, #0x5905
-   LD    BC, #0x1205
+   LD    A, #147
+   LD    DE, #0x6B06 ;90-1, 5 -> 108-1, 6
+   LD    BC, #0x1206 ;18, 5 -> 18, 6
 DFSW_loop2:
    PUSH  BC
 DFSW_loop:
@@ -229,7 +232,7 @@ DFSC_loop2:
 ;modifies:
 ; AHL
 ;----------------------------------------------------------------------------
-Calc_PA_in_PT_at_A:
+Calc_PA_in_PT_at_A::
    SWAP  A
    LD    H, A
    AND   #0xF0
@@ -280,8 +283,9 @@ DS_loop:
    LDH   A, (_rompage)
    LD    D, A
    LD    A, #_rom_page_font
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    POP   AF
 
    PUSH  DE
@@ -311,8 +315,9 @@ DS_loop:
    POP   HL
    POP   AF
 
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    POP   DE
    INC   DE
@@ -337,7 +342,7 @@ DS_loop:
 ;[ dfs_pchar ]
 ;parameters:
 ; (barg1,barg2) = Starting X,Y offset
-; barg4 = Character
+; warg4 = Character
 ;modifies:
 ; barg1 = Updated X offset
 ;----------------------------------------------------------------------------
@@ -347,46 +352,43 @@ _dfs_pchar::
    LDH   A, (_rompage)
    PUSH  AF
 
-   LD    A, #_rom_page_font
-   LDH   (_rompage), A
-   LD    (0x2000), A
-
-   LD    HL, #_barg1
+   LD    HL, #_warg4
    LD    A, (HLI)
-   LD    C, (HL)
-   LD    B, A
+   ADD   A, A
+   SBC   A, A
+   OR    (HL)
+   JR    Z, force_nojp
 
-;   LD    DE, #bigfont
-   CALL  getbigfont
+   LD    A, (_dfs_language)
+   CP    #2
+   JR    Z, _def_pchar_jp
+   
+force_nojp:
+   LD    A, #_rom_page_font
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
-   LD    A, #165
-   CALL  Calc_PA_in_PT_at_A
+   CALL  _dfs_pchar_main
 
-   LD    A, (_barg4)
-PC_extended:
-   PUSH  AF
-   PUSH  BC
-   PUSH  DE
-   PUSH  HL
-   CALL  DrawBigChar
-   POP   HL
-   POP   DE
+   POP   AF
+
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
+
    POP   BC
-   POP   AF
+   RET
 
-   PUSH  DE
-   CALL  BC_getsize
-   POP   DE
+_def_pchar_jp:
+   LD    A, #_rom_page_font_jp
+   RST   0x30
 
-   JR    C, PC_extended
-
-   ADD   A, B
-   LD    (_barg1), A
+   CALL  _dfs_pchar_jp_main
 
    POP   AF
 
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
 
    POP   BC
    RET
@@ -403,46 +405,17 @@ _dfs_pschar::
    PUSH  AF
 
    LD    A, #_rom_page_font
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
-;   LD    DE, #bigfont
-   CALL  getbigfont
-
-   LD    A, (HLD)
-   LD    C, A                           ; chr
-   LD    A, (HLD)
-   LD    B, A                           ; x
-
-   LD    A, (HL)                        ; start_tile
-   CALL  Calc_PA_in_PT_at_A
-
-   LD    A, C
-
-PC_extended2:
-   PUSH  AF
-   PUSH  BC
-   PUSH  DE
-   PUSH  HL
-   CALL  DrawBigCharSprite
-   POP   HL
-   POP   DE
-   POP   BC
-   POP   AF
-
-   PUSH  DE
-   CALL  BC_getsize
-   POP   DE
-
-   JR    C, PC_extended2
-
-   ADD   A, B
-   LD    E, A
+   CALL  _dfs_pschar_main
 
    POP   AF
 
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    POP   BC
    RET
@@ -474,9 +447,38 @@ PC_extended2:
 ;   POP   BC
 ;   RET
 
+SL_do_jp:
+   LD    C, A
+   LD    A, #_rom_page_font_jp
+   RST   0x30
+   LD    A, C
+
+SL_extended_jp:
+   CALL  BC_getsize_jp
+   JR    C, SL_extended_jp
+
+   ADD   A, B
+   LD    B, A
+   RET
+
 ; C=rompage
 SL_loop:
    LD    A, (HLI)
+   LD    E, A
+   LD    D, #0
+
+   LD    A, (_dfs_language)
+   CP    #2
+   JR    NZ, SL_join_non_jp
+
+   LD    A, (HLI)
+   LD    D, A
+   OR    A
+   JR    NZ, SL_do_jp
+
+SL_join_non_jp:
+   LD    A, E
+
    CP    #0x20    ; ' '
    RET   Z
    CP    #0x7C    ; '|'
@@ -484,10 +486,22 @@ SL_loop:
    OR    A        ; nul
    RET   Z
 
+   ADD   A, A
+   SBC   A, A
+   OR    D
+   LD    A, E
+   JR    Z, SL_do_non_jp
+
+   LD    A, (_dfs_language)
+   CP    #2
+   JR    Z, SL_do_jp
+
+SL_do_non_jp:
    LD    D, A
    LD    A, #_rom_page_font
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    LD    A, D
 
 SL_extended:
@@ -500,7 +514,8 @@ SL_extended:
    LD    B, A
 
    LD    A, C
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    JR    SL_loop

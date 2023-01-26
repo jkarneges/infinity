@@ -482,7 +482,7 @@ void openwindow()
    //pflush();
 
    barg1 = 0;
-   barg2 = 0;
+   barg2 = 4;
 
    start_gradient_small();
    atline = 0;
@@ -501,7 +501,7 @@ void resetupwindow()
 {
    dfs_window();
    barg1 = 4;
-   barg2 = 0;
+   barg2 = 4;
    atline = 0;
 }
 
@@ -515,9 +515,9 @@ void hide_moreicon()
    put_tile(18, 6, 7);
 }
 
-void win_pchar(UBYTE c)
+void win_pchar(UWORD c)
 {
-   barg4 = c;
+   warg4 = c;
    dfs_pchar();
 }
 
@@ -526,7 +526,7 @@ void win_newline()
    ++atline;
 
    barg1 = 4;
-   barg2 = 14 * atline;
+   barg2 = 14 * atline + 4;
 }
 
 
@@ -1584,7 +1584,7 @@ void f_reset_data()
 {
    UBYTE lastpage;
 
-   lastpage = rom_page(BATTLE4_PAGE);
+   lastpage = rom_page(BATTLE5_PAGE);
    reset_data();
    rom_page(lastpage);
 }
@@ -1605,7 +1605,7 @@ UBYTE f_binqueue(UBYTE guy)
    UBYTE lastpage;
    UBYTE r;
 
-   lastpage = rom_page(BATTLE_PAGE);
+   lastpage = rom_page(BATTLE3_PAGE);
    r = binqueue(guy);
    rom_page(lastpage);
 

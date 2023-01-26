@@ -47,61 +47,6 @@ void items_del(UBYTE type);
 
 void gems_add(UBYTE type, UBYTE charge);
 
-void items_reset()
-{
-   item_num = 100;
-
-   for(n = 0; n < 100; ++n) {
-      item_list_type[n]   = 0;
-      item_list_num[n]    = 0;
-   }
-   for(n = 0; n < 9; ++n) {
-      gems_list[n] = 0;
-      gems_charge[n] = 0;
-   }
-
-   // gem #5 [6] is unused! (Opal)
-
-/* gems_add(12, 99);
-   gems_add( 2, 99);
-   gems_add( 3, 99);
-   gems_add( 4, 99);
-   gems_add(11, 99);*/
-
-// gems_add( 7, 99);
-// gems_add( 8, 99);
-// gems_add( 9, 99);
-// gems_add(10, 99);
-// gems_add(11, 99);
-// gems_add(12, 99);
-// gems_add(13, 99);
-// gems_add(14, 99);
-// gems_add(16, 99);
-
-/* items_add(1);
-   items_add(6);
-
-   items_add(1);
-   items_add(2);
-   items_add(3);
-   items_add(4);
-   items_add(5);
-   items_add(6);
-   items_add(7);
-   items_add(7);
-   items_add(7);
-
-   gems_add(1);
-   gems_add(2);
-   gems_add(3);
-   gems_add(4);
-   gems_add(5);
-   gems_add(6);
-   gems_add(7);
-   gems_add(8);
-   gems_add(9);*/
-}
-
 void gold_give(UWORD amount)
 {
    UBYTE ask[3];
@@ -283,48 +228,6 @@ void temp_generate(UBYTE guy, UBYTE type, UBYTE have)
 }
 
 struct DUDESTAT temp_guy;
-
-void stats_recalc(struct DUDESTAT *guy)
-{
-   UBYTE n;
-   BYTE att, def, spd, man;
-
-   att = 1;
-   def = 1;
-   spd = 0;
-   man = 0;
-
-   // calculate speed
-   spd += guy->agl;
-
-   for(n = 0; n != 3; ++n) {
-      att += item_info2(guy->e[n])[1];
-      def += item_info2(guy->e[n])[2];
-      spd += item_info2(guy->e[n])[3];
-      man += item_info2(guy->e[n])[4];
-   }
-
-   if(guy->type == VICTOR_WOLF) {
-      n = guy->wolfpow * 3;
-      att += n;
-      def += n;
-   }
-
-   if(att < 0)
-      att = 0;
-   if(def < 0)
-      def = 0;
-   if(spd < 0)
-      spd = 0;
-   if(man < 0)
-      man = 0;
-
-   guy->att = att;
-   guy->def = def;
-   guy->spd = spd;
-   guy->man = man;
-}
-
 
 // note to self:
 // 0-8 = edges, 4=blank, 19=black
@@ -1630,7 +1533,7 @@ BYTE do_equipmenu_sel(UBYTE guy, UBYTE e_num)
       if(oindex != index) {
          memcpy(&temp_guy, st, (UWORD)sizeof(struct DUDESTAT));
          temp_guy.e[e_num] = temp_list_type[index];
-         stats_recalc(&temp_guy);
+         f_stats_recalc(&temp_guy);
          reshow_equip_stats(&temp_guy);
          show_equip_arrows();
       }
@@ -1711,7 +1614,7 @@ BYTE do_equipmenu_sel(UBYTE guy, UBYTE e_num)
          ipstr(0, 6, (char *)item_info(new_item) + 1);
          put_tile(7, 5+e_num, ICON_BASE + item_info(new_item)[0] - 'A');
 
-         stats_recalc(st);
+         f_stats_recalc(st);
 
          return ENTER;
       }

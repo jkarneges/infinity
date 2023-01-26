@@ -11,7 +11,9 @@ clean:
 	rm -f resource/eve/eform.txt resource/eve/eform.pst resource/eve/eform.dat
 	rm -f resource/eve/formdefs.h
 	rm -f resource/eve/etxt.h
+	rm -f resource/eve/font_jp.h
 	rm -f resource/eve/dialog.dat
+	rm -f resource/eve/dialog.ja.dat
 	rm -f resource/eve/game.pst resource/eve/demo.edt
 	rm -f resource/ext/*.bin
 	rm -f resource/ext/game.j2w
@@ -19,11 +21,19 @@ clean:
 	rm -f resource/*.pag
 	rm -f source/data/*.h
 	rm -f build/*.o
+	rm -f build/j.*
 
 distclean: clean
 	cd tools/toolchain && make clean
 	rm -rf source/data
 	rm -rf build
+
+buildversion:
+	echo .ascii \"$(ver)\" >source/version.s
+	touch source/logo.s
+
+pagesize:
+	./bin/pagesize ./build/j.gb
 
 run: build/j.gb
 	retroarch -L /usr/lib/x86_64-linux-gnu/libretro/gambatte_libretro.so build/j.gb
@@ -40,11 +50,17 @@ resource/eve/eform.dat: resource/eve/eform.pst
 resource/efr00.pag: resource/eve/eform.dat
 	cd resource && ../bin/pagify eve/eform.dat efr
 
-resource/eve/dialog.dat: resource/eve/dialog.txt
+resource/eve/dialog.dat resource/eve/etxt.h: resource/eve/dialog.txt
 	cd resource/eve && ../../bin/proctext dialog.txt dialog.dat
+
+resource/eve/dialog.ja.dat source/eve/font_jp.h: resource/eve/dialog.ja.txt
+	cd resource/eve && ../../bin/proctxtj dialog.ja.txt k8x12.fnt k8x12_0.png dialog.ja.dat ../../source/eve/font_jp.h
 
 resource/txt00.pag: resource/eve/dialog.dat
 	cd resource && ../bin/pagify eve/dialog.dat txt
+
+resource/txj00.pag: resource/eve/dialog.ja.dat
+	cd resource && ../bin/pagify eve/dialog.ja.dat txj
 
 resource/eve/game.pst: resource/eve/game.eve
 	cd resource/eve && cpp < game.eve | ../../bin/post > game.pst
@@ -356,7 +372,7 @@ build/e.o: source/e.c
 build/asm.o: source/asmfunc.s
 	cd source && lcc -c -Wa-g -o ../build/asm.o asmfunc.s
 
-build/j.o: source/j.c
+build/j.o: source/j.c source/events.h resource/eve/etxt.h
 	cd source && lcc -Wf-bo1 -c -o ../build/j.o j.c
 
 build/j2.o: source/j2.c
@@ -395,11 +411,20 @@ build/b6.o: source/b6.c
 build/dm.o: source/dfs_main.s
 	cd source && lcc -Wf-bo13 -c -Wa-g -o ../build/dm.o dfs_main.s
 
+build/dj.o: source/dfs_jp.s source/eve/font_jp.h
+	cd source && lcc -Wf-bo98 -c -Wa-g -o ../build/dj.o dfs_jp.s
+
 build/t.o: source/title.s
 	cd source && lcc -Wf-bo14 -c -Wa-g -o ../build/t.o title.s
 
-build/j.gb: source/eve/itemdefs.h build/e.o build/asm.o build/j.o build/j2.o build/d1.o build/d2.o build/m.o build/m2.o build/b.o build/b2.o build/b3.o build/b4.o build/b5.o build/b6.o build/dm.o build/t.o resource/efr00.pag resource/txt00.pag resource/eve00.pag resource/map00.pag
-	cd build && lcc -Wl-m -Wl-yt27 -Wl-yo128 -Wl-ya4 -o j.gb e.o asm.o j.o j2.o m.o m2.o d1.o d2.o b.o b2.o b3.o b4.o b5.o b6.o dm.o t.o
+build/logo.o: source/logo.s
+	cd source && lcc -Wf-bo99 -c -Wa-g -o ../build/logo.o logo.s
+
+build/cutscene.o: source/cutscene.s
+	cd source && lcc -Wf-bo99 -c -Wa-g -o ../build/cutscene.o cutscene.s
+
+build/j.gb: source/eve/itemdefs.h build/e.o build/asm.o build/j.o build/j2.o build/d1.o build/d2.o build/m.o build/m2.o build/b.o build/b2.o build/b3.o build/b4.o build/b5.o build/b6.o build/dm.o build/dj.o build/t.o build/logo.o build/cutscene.o resource/efr00.pag resource/txt00.pag resource/txj00.pag resource/eve00.pag resource/map00.pag
+	cd build && lcc -Wl-m -Wl-yt27 -Wl-yo128 -Wl-ya4 -o j.gb e.o asm.o j.o j2.o m.o m2.o d1.o d2.o b.o b2.o b3.o b4.o b5.o b6.o dm.o dj.o t.o logo.o cutscene.o
 
 	cd resource && ../bin/inspage ../build/j.gb zonemap.pag 15
 	cd resource && ../bin/inspage ../build/j.gb efr00.pag 16
@@ -414,7 +439,7 @@ build/j.gb: source/eve/itemdefs.h build/e.o build/asm.o build/j.o build/j2.o bui
 	cd resource && ../bin/inspage ../build/j.gb txt03.pag 24
 	cd resource && ../bin/inspage ../build/j.gb txt04.pag 25
 	cd resource && ../bin/inspage ../build/j.gb txt05.pag 26
-	cd resource && ../bin/inspage ../build/j.gb txt06.pag 27
+	# cd resource && ../bin/inspage ../build/j.gb txt06.pag 27
 
 	cd resource && ../bin/inspage ../build/j.gb table.pag  28
 
@@ -463,6 +488,20 @@ build/j.gb: source/eve/itemdefs.h build/e.o build/asm.o build/j.o build/j2.o bui
 	cd resource && ../bin/inspage ../build/j.gb audio13.bin 76
 	cd resource && ../bin/inspage ../build/j.gb audio14.bin 77
 	cd resource && ../bin/inspage ../build/j.gb audio15.bin 78
+
+	cd resource && ../bin/inspage ../build/j.gb txj00.pag 81
+	cd resource && ../bin/inspage ../build/j.gb txj01.pag 82
+	cd resource && ../bin/inspage ../build/j.gb txj02.pag 83
+	cd resource && ../bin/inspage ../build/j.gb txj03.pag 84
+	cd resource && ../bin/inspage ../build/j.gb txj04.pag 85
+	cd resource && ../bin/inspage ../build/j.gb txj05.pag 86
+	cd resource && ../bin/inspage ../build/j.gb txj06.pag 87
+	cd resource && ../bin/inspage ../build/j.gb txj07.pag 88
+	cd resource && ../bin/inspage ../build/j.gb txj08.pag 89
+#	cd resource && ../bin/inspage ../build/j.gb txj09.pag 90
+#	cd resource && ../bin/inspage ../build/j.gb txj10.pag 91
+#	cd resource && ../bin/inspage ../build/j.gb txj11.pag 92
+#	cd resource && ../bin/inspage ../build/j.gb txj12.pag 93
 
 	cd resource && ../bin/itemconv eve/items.ref ../build/j.gb
 	cd resource && ../bin/fixgb ../build/j.gb INFINITY

@@ -472,8 +472,8 @@ void main_game()
    //enable_interrupts();
 
    init();
-
-   f_copyright();
+   f_showlogo();
+   //f_copyright();
    
 start:
    demo_reset = 0;
@@ -493,7 +493,7 @@ start:
    stop_song();
 #endif
    title_init();
-
+   f_version();
    // setup gradient
    start_gradient_slm();
    slm_init();
@@ -1024,7 +1024,9 @@ no_title:
                }
             }
 
-            /*if(c == CANCEL && ch[0].mode == NORM) {
+#ifdef DEBUG_BATTLES
+            ////debug: B button on map to toggle encounter
+            if(c == CANCEL && ch[0].mode == NORM) {
                if(encounter_protect) {
                   encounter_protect = 0;
                   play_sfx(SFX_SWORD);
@@ -1032,7 +1034,7 @@ no_title:
                else {
                   encounter_protect = 1;
                   play_sfx(SFX_ESCAPE);
-               }*/
+               }
 
                /*if(map_cur == 0) {
                   if(omni_count == 0)
@@ -1045,7 +1047,8 @@ no_title:
                      omni_save = 0;
                   }
                }*/
-            //}
+            }
+#endif
             if((c == MENU && ch[0].mode == NORM && in_fade == 0) || c == SELECT) {
                                         do_delay(2);
                                         owe_off();

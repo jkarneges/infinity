@@ -12,7 +12,7 @@ Additionally, any programming source files for the main game program, as well as
 
 ## Building
 
-Building the game requires a unix-like environment, GBDK, Yasm, as well as custom build utilities that you'll need to compile. On Windows, you can use [MSYS2](https://www.msys2.org/).
+Building the game requires a unix-like environment, GBDK, [Yasm](https://yasm.tortall.net/Download.html), as well as custom build utilities that you'll need to compile. On Windows, you can use [MSYS2](https://www.msys2.org/).
 
 Clone our GBDK repository, which contains tweaks for it to build on modern systems. Build and install it somewhere. Below installs to `/home/user/gbdk/sdk`:
 
@@ -22,6 +22,14 @@ cd gbdk
 GBDK_PATH=~/gbdk
 make SDK_DIR=$GBDK_PATH
 make SDK_DIR=$GBDK_PATH install
+```
+
+Clone the Infinity repository:
+
+```sh
+git clone https://github.com/infinity-gbc/infinity.git
+cd infinity
+INFINITY=`pwd`
 ```
 
 Patch and build the GBDK library:
@@ -37,14 +45,6 @@ Put the compiler in your `$PATH`:
 
 ```sh
 export PATH=$PATH:$GBDK_PATH/sdk/gbz80-gb/2.1.5/bin
-```
-
-Clone the Infinity repository:
-
-```sh
-git clone https://github.com/infinity-gbc/infinity.git
-cd infinity
-INFINITY=`pwd`
 ```
 
 Build the toolchain:

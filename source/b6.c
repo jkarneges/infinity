@@ -74,7 +74,7 @@ UBYTE bflipdir(UBYTE bdir)
    return bfliptab[bdir];
 }
 
-void b6_bgetreal(struct BDUDE *bch)
+void bgetreal(struct BDUDE *bch)
 {
    WORD px, py;
    BYTE even;
@@ -770,7 +770,7 @@ void start_skill()
             // found a new place, set the guy there
             bch[k].x = dx;
             bch[k].y = dy;
-            b6_bgetreal(&bch[k]);
+            bgetreal(&bch[k]);
          }
       }
 
