@@ -151,14 +151,16 @@ _scl_init::
    PUSH  AF                            ;4
 
    LD    A, #_rom_page_title           ;2
-   LDH   (_rompage), A                 ;3
-   LD    (0x2000), A                   ;4
+   RST   0x30
+   ;LDH   (_rompage), A                 ;3
+   ;LD    (0x2000), A                   ;4
 
    CALL  _scl_init_real                ;6
 
    POP   AF                            ;3
-   LDH   (_rompage), A                 ;3
-   LD    (0x2000), A                   ;4
+   RST   0x30
+   ;LDH   (_rompage), A                 ;3
+   ;LD    (0x2000), A                   ;4
    RET                                 ;4
 
 ;----------------------------------------------------------------------------
@@ -169,14 +171,16 @@ _scl_roll::
    PUSH  AF                            ;4
 
    LD    A, #_rom_page_title           ;2
-   LDH   (_rompage), A                 ;3
-   LD    (0x2000), A                   ;4
+   RST   0x30
+   ;LDH   (_rompage), A                 ;3
+   ;LD    (0x2000), A                   ;4
 
    CALL  _scl_roll_real                ;6
 
    POP   AF                            ;3
-   LDH   (_rompage), A                 ;3
-   LD    (0x2000), A                   ;4
+   RST   0x30
+   ;LDH   (_rompage), A                 ;3
+   ;LD    (0x2000), A                   ;4
    RET                                 ;4
 
 _scl_hbl::

@@ -7,7 +7,7 @@ build
 /resource/eve/eform.*
 /resource/eve/formdefs.h
 /resource/eve/etxt.h
-/resource/eve/dialog.dat
+/resource/eve/dialog*.dat
 /resource/eve/game.pst
 /resource/eve/demo.edt
 /resource/ext/*.bin
@@ -15,4 +15,7 @@ build
 /resource/ext/zonemap.pag
 /resource/*.pag
 /source/data/*.h
+/source/eve/font_*.h
 *.o
+*.swp
+

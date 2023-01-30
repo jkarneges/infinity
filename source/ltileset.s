@@ -47,12 +47,14 @@ _loadtileset::
    LD    (HLI), A                      ; get current
    LD    (HLI), A                      ; get current
 
-   LD    HL, #0x2002                   ;
+   ;LD    HL, #0x2002                   ;
 
    LD    A, #table_page                ; switch to table page
-   LDH   (_rompage), A                 ;
-   LD    (HL), A                       ;
-   ADD   HL, HL                        ; HL = 4004
+   ;LDH   (_rompage), A                 ;
+   ;LD    (HL), A                       ;
+   ;ADD   HL, HL                        ; HL = 4004
+   RST   0x30
+   LD    HL, #0x4004
 
    LD    A, (HLI)                      ; (4004)=rom page of tileset start
    LD    B, A                          ; (4005/4006)=offset to tileset table
@@ -75,8 +77,9 @@ _loadtileset::
    INC   HL                            ;
    LD    B, (HL)                       ; B =number of tiles
 
-   LDH   (_rompage), A                 ; switch to this page
-   LD    (0x2000), A                   ;
+   RST   0x30
+   ;LDH   (_rompage), A                 ; switch to this page
+   ;LD    (0x2000), A                   ;
 
    SET   6, D                          ; DE->tileset
 
@@ -189,8 +192,9 @@ _animation::
    LDH   A, (_rompage)
    PUSH  AF
    LD    A, (_owe_tileset_rompage)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    HL, #_owe_timer
    INC   (HL)
@@ -209,16 +213,18 @@ _animation::
    OR    A
    POP   BC
    LD    A, B
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET   Z
 
    PUSH  BC
    LD    BC, #8
 
    LD    A, (_owe_tileset_rompage)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    A, (HL)                       ; count
    ADD   HL, BC
@@ -274,7 +280,8 @@ strange_loop3:
    LDH   (P_VBK), A                    ; bank x
 
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    RET

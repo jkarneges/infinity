@@ -181,6 +181,12 @@ UBYTE setbchoose(UBYTE icon, UBYTE guy)
    return 1;
 }
 
+
+UBYTE binqueue(UBYTE guy);
+void wipe_gem();
+void wipe_menu();
+void wipe_text();
+
 BYTE get_player_input(UBYTE guy)
 {
    BYTE even;
@@ -252,7 +258,7 @@ BYTE get_player_input(UBYTE guy)
 
       // menu toast?  poof!
       if(bmenu == 0)
-         f_wipe_menu();
+         wipe_menu();
    }*/
 
    // update sliding gem
@@ -361,7 +367,7 @@ BYTE get_player_input(UBYTE guy)
                                                 continue;
 
                                         if(bch[n2].control == BPLAYER) {
-                                                if(bch[n2].points >= 1 && bch[n2].st.hp > 0 && !f_binqueue(n2)) {
+                                                if(bch[n2].points >= 1 && bch[n2].st.hp > 0 && !binqueue(n2)) {
                                                         play_sfx(SFX_MENUCURSOR);
                                                         f_player_cancel();
                                                         f_player_control(n2);
@@ -470,7 +476,7 @@ BYTE get_player_input(UBYTE guy)
                      }
                      else {
                         bch[guy].gem = 0;
-                        f_wipe_gem();
+                        wipe_gem();
                      }
                      //bmenu = 2;
                      bicon_slideout();
@@ -604,7 +610,7 @@ BYTE get_player_input(UBYTE guy)
       //while(1);
 
       if(key[CANCEL] || !bch[bchoosetarget].active || (bch[bchoosetarget].st.hp == 0 && bch[bchoosetarget].control == BCPU)) {
-         f_wipe_text();
+         wipe_text();
          //bmenu = 6;
          //bmenusquish = 16;
          binputmode = 1;
@@ -625,7 +631,7 @@ BYTE get_player_input(UBYTE guy)
                // enough GP?
                if(gems_charge[bgemselect] >= skl_cost) {
                   play_sfx(SFX_MENUACCEPT);
-                  f_wipe_text();
+                  wipe_text();
 
                   bch[guy].target = bchoosetarget;
                   req = skl_gem-1;
@@ -647,7 +653,7 @@ BYTE get_player_input(UBYTE guy)
                // enough SP?
                if(bch[guy].st.sp >= skl_cost && ok) {
                   play_sfx(SFX_MENUACCEPT);
-                  f_wipe_text();
+                  wipe_text();
 
                   bch[guy].target = bchoosetarget;
                   req = bch[guy].skl[bchooseicon] - 1;
@@ -664,7 +670,7 @@ BYTE get_player_input(UBYTE guy)
                                         bitem_item = (skl_item - 1) & 0x03;
                                         f_bitem_del();
 
-               f_wipe_text();
+               wipe_text();
                bch[guy].target = bchoosetarget;
                req = skl_item-1;
                req += 66;  // req >= 66 == item
@@ -676,14 +682,14 @@ BYTE get_player_input(UBYTE guy)
       winpal(14, 1, 5, 1, rotpal);
 
       if(key[CANCEL]) {
-         f_wipe_text();
+         wipe_text();
          binputmode = 1;
          bicon_shrink();
       }
       else if(key[ENTER]) {
          play_sfx(SFX_MENUACCEPT);
 
-         f_wipe_text();
+         wipe_text();
          req = 80;
          goto input_end;
       }
@@ -708,8 +714,8 @@ input_end:
    }
 
    if(req != -1) {
-      f_wipe_menu();
-      f_wipe_gem();
+      wipe_menu();
+      wipe_gem();
       binputmode = 0;
    }
 
@@ -1179,3 +1185,244 @@ void bshowail(UBYTE guy, UBYTE flop)
    else
       bspr_8set(base, 0, 0, -1, 0);
 }
+
+
+
+UBYTE text_active, text_mode;
+WORD text_x, text_y;
+BYTE text_x2, text_y2;
+BYTE text_x3, text_y3;
+UBYTE text_c1, text_c2, text_c3;
+extern UBYTE a1, a2, a3, a4;
+UBYTE text_miss, text_frame;
+UBYTE text_pal;
+
+static void text_show()
+{
+   if(text_miss) {
+      text_frame = (text_active >> 3) & 0x03;
+      bspr_8set(28, text_x,     text_y, 80 + (text_frame << 1), 6);
+      bspr_8set(29, text_x + 8, text_y, 81 + (text_frame << 1), 6);
+   }
+   else {
+      bspr_8set(28, text_x,           text_y,           text_c1 + 15, text_pal);
+      bspr_8set(29, text_x + text_x2, text_y + text_y2, text_c2 + 15, text_pal);
+      bspr_8set(30, text_x + text_x3, text_y + text_y3, text_c3 + 15, text_pal);
+   }
+}
+
+void text_init(WORD x, WORD y, WORD value, UBYTE mode)
+{
+   UWORD n;
+   UBYTE spmode;
+
+   text_x = x;
+   text_y = y;
+   text_x2 = 0;
+   text_y2 = 0;
+   text_x3 = 0;
+   text_y3 = 0;
+
+   text_pal = 6;
+   text_miss = 0;
+
+   spmode = 0;
+   if(mode & 128) {
+      mode &= 127;
+      spmode = 1;
+   }
+
+   if(value < 0) {
+      value = -value;
+      text_pal = spmode ? 0: 1;
+   }
+   else if(value == 0)
+      text_miss = 1;
+
+   // get the 3 digits
+   n = value / 100;
+   value %= 100;
+   a1 = n;
+   n = value / 10;
+   value %= 10;
+   a2 = n;
+   a3 = value;
+
+   // deal with zeros
+   ++a3;
+   if(a1 != 0)
+      ++a1;
+   if(a2 != 0)
+      ++a2;
+   if(a2 == 0 && a1 != 0)
+      ++a2;
+
+
+   // assign the sprites
+   if(mode == BDIR_UP || mode == BDIR_DOWN) {
+      text_c1 = a2;
+      text_c2 = a1;
+      text_c3 = a3;
+   }
+   else if(mode == BDIR_UPRIGHT || mode == BDIR_DOWNRIGHT) {
+      text_c1 = a1;
+      text_c2 = a2;
+      text_c3 = a3;
+   }
+   else if(mode == BDIR_UPLEFT || mode == BDIR_DOWNLEFT) {
+      text_c1 = a3;
+      text_c2 = a2;
+      text_c3 = a1;
+   }
+
+   text_show();
+   text_active = 1;
+   text_mode = mode;
+}
+
+static void text_off()
+{
+   bspr_8set(28, 0, 0, -1, 0);
+   bspr_8set(29, 0, 0, -1, 0);
+   bspr_8set(30, 0, 0, -1, 0);
+
+   text_active = 0;
+}
+
+void text_update()
+{
+   if(!text_active)
+      return;
+
+   if(text_active >= (32 << text_miss)) {
+      text_off();
+      return;
+   }
+
+   if(text_mode == BDIR_UP) {
+      if(text_active < 8) {
+         text_y -= 2;
+      }
+      else if(text_active < 12) {
+         text_x2 -= 2;
+         text_x3 += 2;
+      }
+   }
+   else if(text_mode == BDIR_UPRIGHT) {
+      if(text_active < 8) {
+         text_x += 2;
+         text_y -= 2;
+      }
+      else if(text_active < 12) {
+         text_x2 += 2;
+         text_x3 += 2;
+      }
+      else if(text_active < 16) {
+         text_x3 += 2;
+      }
+   }
+   else if(text_mode == BDIR_DOWNRIGHT) {
+      if(text_active < 8) {
+         text_x += 2;
+         text_y += 2;
+      }
+      else if(text_active < 12) {
+         text_x2 += 2;
+         text_x3 += 2;
+      }
+      else if(text_active < 16) {
+         text_x3 += 2;
+      }
+   }
+   else if(text_mode == BDIR_DOWN) {
+      if(text_active < 8) {
+         text_y += 2;
+      }
+      else if(text_active < 12) {
+         text_x2 -= 2;
+         text_x3 += 2;
+      }
+   }
+   else if(text_mode == BDIR_DOWNLEFT) {
+      if(text_active < 8) {
+         text_x -= 2;
+         text_y += 2;
+      }
+      else if(text_active < 12) {
+         text_x2 -= 2;
+         text_x3 -= 2;
+      }
+      else if(text_active < 16) {
+         text_x3 -= 2;
+      }
+   }
+   else if(text_mode == BDIR_UPLEFT) {
+      if(text_active < 8) {
+         text_x -= 2;
+         text_y -= 2;
+      }
+      else if(text_active < 12) {
+         text_x2 -= 2;
+         text_x3 -= 2;
+      }
+      else if(text_active < 16) {
+         text_x3 -= 2;
+      }
+   }
+
+   ++text_active;
+   text_show();
+}
+
+UBYTE get_4waydir(UBYTE bdir)
+{
+   if(bdir == BDIR_UP)
+      return 3;
+   else if(bdir == BDIR_UPRIGHT)
+      return 2;
+   else if(bdir == BDIR_DOWNRIGHT)
+      return 2;
+   else if(bdir == BDIR_DOWN)
+      return 0;
+   else
+      return 1;
+}
+
+extern UBYTE turn_at;
+extern BYTE turn_table[16];
+
+UBYTE binqueue(UBYTE guy)
+{
+   UBYTE n;
+
+   for(n = 0; n < turn_at; ++n) {
+      if(turn_table[n] == guy)
+         return 1;
+   }
+   return 0;
+}
+
+void wipe_gem()
+{
+   UBYTE n;
+
+   for(n = 16; n != 20; ++n)
+      bspr_8set(n, 0, 0, -1, 0);
+}
+
+void wipe_menu()
+{
+   //UBYTE n;
+
+   //for(n = 8; n != 16; ++n)
+   // bspr_8set(n, 0, 0, -1, 0);
+   bicon_reset();
+}
+
+void wipe_text()
+{
+   winpal(13, 1, 6, 1, 7);
+   point_str(btextdesc, 10);
+}
+
+

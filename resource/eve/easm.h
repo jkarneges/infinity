@@ -163,6 +163,8 @@
 #define poem(x)        db 0x2f,x
 #define setbosspal(x)     db 0x38,x
 
+#define cutscene(x)  db 0x82, x
+
 #define end      db 0xFF
 
 #define A   0xF8

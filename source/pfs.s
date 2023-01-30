@@ -76,8 +76,9 @@ _pfs_copy_loop2:
    JR    NZ, _pfs_copy_loop
 _pfs_done_copy:
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    RET
 
@@ -172,8 +173,9 @@ _getptrdat:
 
 _get_grdk_ptr:
    LD    A, #_rom_page_title
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    LD    DE, #_great_dark_fade_pal
    INC   A
    RET
@@ -720,8 +722,9 @@ _setdudepal::
    LDH   A, (_rompage)
    PUSH  AF
    LD    A, #_rom_page_data
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    A, (__gba)                    ; select gbc/gba palette
    ADD   A, #0xFF                      ;
@@ -740,8 +743,9 @@ _setdudepal::
    CALL  set_spr
 
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    POP   BC
    RET
 

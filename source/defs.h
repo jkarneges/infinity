@@ -27,7 +27,10 @@ UBYTE ram_page(UBYTE page);
 #include"eve/sfx.h"
 #include"eve/itemdefs.h"
 
-//#define NO_MUSIC        1
+//-- global flags --
+#define DEBUG_I18N            // debug internationalization (dialog: press B to switch language)
+#define DEBUG_BATTLES         // debug battles (map: press B to turn off encouters+walk thru walls, battles: press SELECT to win)
+//#define NO_MUSIC        1   // turn off music
 
 #define IT_HPLo         1
 #define IT_SPLo         2
@@ -300,7 +303,7 @@ void openwindow();
 void closewindow();
 UBYTE checkwindowlen();
 void resetupwindow();
-void win_pchar(UBYTE c);
+void win_pchar(UWORD c);
 void win_newline();
 
 UBYTE loadmapbase(UBYTE num);
@@ -435,7 +438,7 @@ struct DUDESTAT *get_party(UBYTE x);
 struct DUDESTAT *get_realparty(UBYTE x);
 UBYTE get_event_byte(UWORD ptr);
 void dialog_setup(UWORD text);
-UBYTE get_dialog_byte();
+UWORD get_dialog_char();
 UBYTE get_dialog_strlen();
 void load_eform(UBYTE x, UBYTE *dest);
 void load_enemy(UBYTE x, UBYTE *dest);
@@ -462,7 +465,10 @@ void load_bgfx(UBYTE x);
 UBYTE load_bgfx_item(UBYTE x);
 void bloadboxes();
 
-
+// save/load
+void f_load_saveinfo(UBYTE slot);
+void f_savegame(UBYTE slot);
+void f_loadgame(UBYTE slot);
 
 // battle defs
 #define RUP    3
@@ -736,6 +742,9 @@ void f_copyright();
 UBYTE randfunc();
 UWORD randword();
 
+void f_showlogo();
+void f_version();
+
 void f_map_restate();
 
 void f_bcalcmod();
@@ -778,4 +787,7 @@ void end_deinit();
 
 void f_setbosspal();
 void f_setaluthapal(UBYTE map);
+
+
+void f_viewcutscene(UBYTE scene);
 

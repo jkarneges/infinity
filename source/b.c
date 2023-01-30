@@ -32,28 +32,6 @@ UBYTE bname[5];
 UBYTE bchain_finished, brun, bexit, bwon, bturndelay;
 UBYTE brandframe;
 
-void bgetreal(struct BDUDE *bch)
-{
-   WORD px, py;
-   BYTE even;
-
-   //even = ~bch->x & 1;
-   even = bch->x % 2;
-   even = even ? 0: 1;
-
-   px = bch->x;
-   px *= 24;
-   py = bch->y;
-   py *= 24;
-   py += (WORD)even * 12;
-
-   px += 8;
-   py += 8;
-
-   bch->rx = px;
-   bch->ry = py;
-}
-
 UBYTE bhitd(UBYTE guy, UBYTE dir)
 {
    UBYTE n;
@@ -175,17 +153,6 @@ void turn_init()
    turn = 0;
 }
 
-UBYTE binqueue(UBYTE guy)
-{
-   UBYTE n;
-
-   for(n = 0; n < turn_at; ++n) {
-      if(turn_table[n] == guy)
-         return 1;
-   }
-   return 0;
-}
-
 void bdel(UBYTE slot)
 {
    if(!bch[slot].active)
@@ -194,29 +161,6 @@ void bdel(UBYTE slot)
    bch[slot].active = 0;
    bspr_16set(slot, 0, 0, 0, -1, -1);
    //--bennum;
-}
-
-void wipe_gem()
-{
-   UBYTE n;
-
-   for(n = 16; n != 20; ++n)
-      bspr_8set(n, 0, 0, -1, 0);
-}
-
-void wipe_menu()
-{
-   //UBYTE n;
-
-   //for(n = 8; n != 16; ++n)
-   // bspr_8set(n, 0, 0, -1, 0);
-   bicon_reset();
-}
-
-void wipe_text()
-{
-   winpal(13, 1, 6, 1, 7);
-   point_str(btextdesc, 10);
 }
 
 UBYTE get_gem(UBYTE guy)
@@ -271,9 +215,9 @@ void player_cancel()
    bmenusquish = 0;
    bmenucount = 0;
 
-   wipe_menu();
-   wipe_text();
-   wipe_gem();
+   f_wipe_menu();
+   f_wipe_text();
+   f_wipe_gem();
 }
 
 void bresolve(UBYTE guy)
@@ -520,7 +464,7 @@ UBYTE real_battle()
          }
       }
 
-      bgetreal(b);
+      f_bgetreal(b);
       if(b->st.spd > bfastestspd) {
          bfastestspd = b->st.spd;
          bfastestguy = n;
@@ -880,7 +824,7 @@ UBYTE real_battle()
                      else {
                         bch[n].gem = 0;
                         if(n == turn)
-                           wipe_gem();
+                           f_wipe_gem();
                      }
                   }
                }
@@ -921,7 +865,7 @@ UBYTE real_battle()
                   bblink[n] = 1;
 
                   // make sure you're not in the queue
-                  if(!binqueue(n)) {
+                  if(!f_binqueue(n)) {
                      if(bch[n].ail == BAIL_CHARM) {
                         turn_add(n, f_b_ai_charm(n));
                      }
@@ -990,15 +934,16 @@ skip_meter:
                                 break;
                         }
                 }*/
+#ifdef DEBUG_BATTLES
       ////debug: SELECT button to end battle in victory
-      //if(key[SELECT]) {
-      //   bwon = 1;
-      //   for(n = 0; n != bnumdudes; ++n)
-      //      if(bch[n].control == BCPU)
-      //         bdel(n);
-      //   break;
-      //}
-
+      if(key[SELECT]) {
+         bwon = 1;
+         for(n = 0; n != bnumdudes; ++n)
+            if(bch[n].control == BCPU)
+               bdel(n);
+         break;
+      }
+#endif
 
       if(player_turn) {
          if(player_req == -1) {
@@ -1371,9 +1316,9 @@ skip_meter:
 
    do_delay(2);
 
-   wipe_gem();
-   wipe_text();
-   wipe_menu();
+   f_wipe_gem();
+   f_wipe_text();
+   f_wipe_menu();
 
    winpal(1, 1, 18, 1, 7);
 

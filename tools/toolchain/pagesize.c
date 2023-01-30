@@ -23,6 +23,7 @@ unsigned char buf[16384];
 int main(int argc, char *argv[])
 {
 	int n, page, size, total;
+	float r;
 	FILE *f;
 
 	if(argc < 2) {
@@ -47,15 +48,15 @@ int main(int argc, char *argv[])
 		}
 		size = 16383 - n;
 		printf("Page %3d = ", page);
-		if(size == 1) {
-			printf("1 byte free (probably 0)\n");
-		}
-		else {
-			printf("%d bytes free", 16383 - n);
-			if(size == 16384)
-				printf(" **BLANK**");
-			printf("\n");
-		}
+
+		r = ( 16383 - n ) / (float)16384 * 100;
+		printf("%5d bytes free\t(%5.1f%%)", 16383 - n, r);
+		if(size == 16384)
+			printf(" **BLANK**");
+		if(size == 1)
+			printf(" **probably 0**");
+		printf("\n");
+
 		++page;
 		total += 16384 - size;
 	}

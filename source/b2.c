@@ -360,7 +360,7 @@ void baction_jump(UBYTE guy, WORD x, WORD y, WORD dist)
       ++jumpspeed;
    tw = jumpspeed;
 
-   d = get_4waydir(bch[guy].dir);
+   d = f_get_4waydir(bch[guy].dir);
    bline_set(guy, bch[guy].rx, bch[guy].ry, x, y, jumpspeed);
 
    bch[guy].action = BACT_JUMP;
@@ -495,7 +495,7 @@ void baction_arrow(UBYTE guy, WORD x, WORD y, UBYTE dir)
    bch[guy].progress = 1;
    load_bgfx(8);
 
-   tu = get_4waydir(dir);
+   tu = f_get_4waydir(dir);
    //tz = 0;
    //tv = -6;
 }
@@ -614,7 +614,7 @@ UBYTE baction_next(UBYTE guy)
    if(curaction == BACT_NORM)
       return 0;
 
-   d = get_4waydir(bch[guy].dir);
+   d = f_get_4waydir(bch[guy].dir);
 
    if(curaction == BACT_JUMP) {
       u = bch[guy].count;
@@ -665,7 +665,7 @@ UBYTE baction_next(UBYTE guy)
             px = bch[guy].rx;
             py = bch[guy].ry;
             f_gemcheck(guy);
-            text_init(px, py, bch[guy].damage, b_dir);
+            f_text_init(px, py, bch[guy].damage, b_dir);
             f_bresolve(guy);
          }
       }
@@ -746,7 +746,7 @@ UBYTE baction_next(UBYTE guy)
             px = bch[b_target].rx;
             py = bch[b_target].ry;
             f_gemcheck(b_target);
-            text_init(px, py, bch[b_target].damage, bch[guy].dir);
+            f_text_init(px, py, bch[b_target].damage, bch[guy].dir);
             f_bresolve(b_target);
          }
       }
@@ -784,7 +784,7 @@ UBYTE baction_next(UBYTE guy)
             a1 = BDIR_UP;
             if(bch[guy].spflag)
                a1 |= 128;
-            text_init(px, py, bch[guy].damage, a1);
+            f_text_init(px, py, bch[guy].damage, a1);
             f_bresolve(guy);
          }
 
@@ -913,7 +913,7 @@ UBYTE baction_next(UBYTE guy)
             px = bch[guy].rx;
             py = bch[guy].ry;
             f_gemcheck(guy);
-            text_init(px, py, bch[guy].damage, BDIR_UP);
+            f_text_init(px, py, bch[guy].damage, BDIR_UP);
             f_bresolve(guy);
          }
          if(u < 32) {
@@ -953,7 +953,7 @@ UBYTE baction_next(UBYTE guy)
          px = bch[guy].rx;
          py = bch[guy].ry;
          f_gemcheck(guy);
-         text_init(px, py, bch[guy].damage, BDIR_UP);
+         f_text_init(px, py, bch[guy].damage, BDIR_UP);
          f_bresolve(guy);
          bfocus = guy;
       }
@@ -989,204 +989,4 @@ UBYTE baction_next(UBYTE guy)
    }
 
    return 1;
-}
-
-UBYTE text_active, text_mode;
-WORD text_x, text_y;
-BYTE text_x2, text_y2;
-BYTE text_x3, text_y3;
-UBYTE text_c1, text_c2, text_c3;
-extern UBYTE a1, a2, a3, a4;
-UBYTE text_miss, text_frame;
-UBYTE text_pal;
-
-void text_show()
-{
-   if(text_miss) {
-      text_frame = (text_active >> 3) & 0x03;
-      bspr_8set(28, text_x,     text_y, 80 + (text_frame << 1), 6);
-      bspr_8set(29, text_x + 8, text_y, 81 + (text_frame << 1), 6);
-   }
-   else {
-      bspr_8set(28, text_x,           text_y,           text_c1 + 15, text_pal);
-      bspr_8set(29, text_x + text_x2, text_y + text_y2, text_c2 + 15, text_pal);
-      bspr_8set(30, text_x + text_x3, text_y + text_y3, text_c3 + 15, text_pal);
-   }
-}
-
-void text_init(WORD x, WORD y, WORD value, UBYTE mode)
-{
-   UWORD n;
-   UBYTE spmode;
-
-   text_x = x;
-   text_y = y;
-   text_x2 = 0;
-   text_y2 = 0;
-   text_x3 = 0;
-   text_y3 = 0;
-
-   text_pal = 6;
-   text_miss = 0;
-
-   spmode = 0;
-   if(mode & 128) {
-      mode &= 127;
-      spmode = 1;
-   }
-
-   if(value < 0) {
-      value = -value;
-      text_pal = spmode ? 0: 1;
-   }
-   else if(value == 0)
-      text_miss = 1;
-
-   // get the 3 digits
-   n = value / 100;
-   value %= 100;
-   a1 = n;
-   n = value / 10;
-   value %= 10;
-   a2 = n;
-   a3 = value;
-
-   // deal with zeros
-   ++a3;
-   if(a1 != 0)
-      ++a1;
-   if(a2 != 0)
-      ++a2;
-   if(a2 == 0 && a1 != 0)
-      ++a2;
-
-
-   // assign the sprites
-   if(mode == BDIR_UP || mode == BDIR_DOWN) {
-      text_c1 = a2;
-      text_c2 = a1;
-      text_c3 = a3;
-   }
-   else if(mode == BDIR_UPRIGHT || mode == BDIR_DOWNRIGHT) {
-      text_c1 = a1;
-      text_c2 = a2;
-      text_c3 = a3;
-   }
-   else if(mode == BDIR_UPLEFT || mode == BDIR_DOWNLEFT) {
-      text_c1 = a3;
-      text_c2 = a2;
-      text_c3 = a1;
-   }
-
-   text_show();
-   text_active = 1;
-   text_mode = mode;
-}
-
-void text_off()
-{
-   bspr_8set(28, 0, 0, -1, 0);
-   bspr_8set(29, 0, 0, -1, 0);
-   bspr_8set(30, 0, 0, -1, 0);
-
-   text_active = 0;
-}
-
-void text_update()
-{
-   if(!text_active)
-      return;
-
-   if(text_active >= (32 << text_miss)) {
-      text_off();
-      return;
-   }
-
-   if(text_mode == BDIR_UP) {
-      if(text_active < 8) {
-         text_y -= 2;
-      }
-      else if(text_active < 12) {
-         text_x2 -= 2;
-         text_x3 += 2;
-      }
-   }
-   else if(text_mode == BDIR_UPRIGHT) {
-      if(text_active < 8) {
-         text_x += 2;
-         text_y -= 2;
-      }
-      else if(text_active < 12) {
-         text_x2 += 2;
-         text_x3 += 2;
-      }
-      else if(text_active < 16) {
-         text_x3 += 2;
-      }
-   }
-   else if(text_mode == BDIR_DOWNRIGHT) {
-      if(text_active < 8) {
-         text_x += 2;
-         text_y += 2;
-      }
-      else if(text_active < 12) {
-         text_x2 += 2;
-         text_x3 += 2;
-      }
-      else if(text_active < 16) {
-         text_x3 += 2;
-      }
-   }
-   else if(text_mode == BDIR_DOWN) {
-      if(text_active < 8) {
-         text_y += 2;
-      }
-      else if(text_active < 12) {
-         text_x2 -= 2;
-         text_x3 += 2;
-      }
-   }
-   else if(text_mode == BDIR_DOWNLEFT) {
-      if(text_active < 8) {
-         text_x -= 2;
-         text_y += 2;
-      }
-      else if(text_active < 12) {
-         text_x2 -= 2;
-         text_x3 -= 2;
-      }
-      else if(text_active < 16) {
-         text_x3 -= 2;
-      }
-   }
-   else if(text_mode == BDIR_UPLEFT) {
-      if(text_active < 8) {
-         text_x -= 2;
-         text_y -= 2;
-      }
-      else if(text_active < 12) {
-         text_x2 -= 2;
-         text_x3 -= 2;
-      }
-      else if(text_active < 16) {
-         text_x3 -= 2;
-      }
-   }
-
-   ++text_active;
-   text_show();
-}
-
-UBYTE get_4waydir(UBYTE bdir)
-{
-   if(bdir == BDIR_UP)
-      return 3;
-   else if(bdir == BDIR_UPRIGHT)
-      return 2;
-   else if(bdir == BDIR_DOWNRIGHT)
-      return 2;
-   else if(bdir == BDIR_DOWN)
-      return 0;
-   else
-      return 1;
 }

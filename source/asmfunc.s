@@ -46,8 +46,11 @@ _rom_page_form    = 0x10
 _rom_page_events  = 0x11 ; to 0x14
 _rom_page_text    = 0x15 ; to 0x1A
 _rom_page_table   = 0x1C
-_rom_page_world   = 0x2D
+_rom_page_world   = 0x2E
+_rom_page_font_jp = 0x62   ;98
 _rom_page_para5   = 0x3F
+_rom_page_cutscene = 0x62
+_rom_page_logo   = 0x63
 
 table_page  = _rom_page_table
 
@@ -132,10 +135,19 @@ auto_proc_rom:
 auto_proc_ptr:
    .ds   2
 
-_backup_rompage:
-   .ds   1
-_backup_return:
+_far_call_stack_limit:                 ; need non-zero
+   .ds   3
+_far_call_stack_begin:                 ; 5 entries
+   .ds   15
+_far_call_stack_end:
+
+_far_call_stack:
    .ds   2
+
+;_backup_rompage:
+;   .ds   1
+;_backup_return:
+;   .ds   2
 
 rnd_var:
    .ds   1
@@ -255,13 +267,13 @@ _asm_init::
 ;   LD    (BC), A  ; BC = 0
 ;_nocopysaves:
 
-ai_fm_tryagain:                        ; Try to set FAST mode
-   LD    A, #0x01
-   LDH   (P_KEY1), A                   ; Causes 1x <-> 2x toggle
-   STOP
-   LDH   A, (P_KEY1)                   ; Is CPU 2x speed?
-   ADD   A, A
-   JR    NC, ai_fm_tryagain
+;ai_fm_tryagain:                        ; Try to set FAST mode
+;   LD    A, #0x01
+;   LDH   (P_KEY1), A                   ; Causes 1x <-> 2x toggle
+;   STOP
+;   LDH   A, (P_KEY1)                   ; Is CPU 2x speed?
+;   ADD   A, A
+;   JR    NC, ai_fm_tryagain
 
    DI
 
@@ -271,7 +283,11 @@ ai_fm_tryagain:                        ; Try to set FAST mode
    LD    A, #0x01
    LDH   (_hbimode), A
    CALL  set_ram_page
-   CALL  set_rom_page
+   
+   XOR   A
+   LD    (0x3000),A
+   INC   A
+   CALL set_rom_page
 
    LD    HL, #_pfs_targetbgr
    LD    (HL), #0b11111110
@@ -284,8 +300,22 @@ ai_fm_tryagain:                        ; Try to set FAST mode
 ;   LD    (HLI), A
 ;   LD    (HL), D
 
+   ;init artificial stack
+   LD    HL, #_far_call_stack_limit
    LD    A, #0xFF
-   LD    (_backup_rompage), A
+   LD    B, #3
+   CALL  _STIR_B
+   XOR   A
+   LD    B, #15
+   CALL  _STIR_B
+   LD    HL, #_far_call_stack
+   LD    DE, #_far_call_stack_end
+   LD    A, E
+   LD    (HLI), A
+   LD    (HL), D
+
+;   LD    A, #0xFF
+;   LD    (_backup_rompage), A
 
    XOR   A
 ;   LD    (_debug_on), A
@@ -306,8 +336,11 @@ ai_fm_tryagain:                        ; Try to set FAST mode
    LD    A, #167
    LDH   (P_WX), A
 
-   XOR   A                                        ; Set rom page to 0
-   LD    (0x3000), A
+   ;XOR   A                                        ; Set rom page to 0
+   ;LD    (0x3000), A
+
+   XOR   A                     ;initialize language to 0 = 'en'
+   LD    (_dfs_language), A
 
    LD    HL, #0xC000
    LD    B, #0xA0
@@ -332,8 +365,9 @@ _rom_page::
 ;nocrash:
 
 set_rom_page:
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
 
    RET
 
@@ -744,11 +778,13 @@ randfuncasm::
 ;modifies:
 ; AEHL
 get_frame_ptr:
-   LD    HL, #0x2000
+   ;LD    HL, #0x2000
    LD    A, #table_page                ; Map 4000-7FFF to cur_page
-   LDH   (_rompage), A
-   LD    (HL), A
-   ADD   HL, HL
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (HL), A
+   ;ADD   HL, HL
+   LD    HL, #0x4000
    LD    A, (HLI)
    ADD   A, B
    LD    E, A
@@ -757,8 +793,9 @@ get_frame_ptr:
    LD    L, A
    LD    A, E
 
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ; page # with sprite
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ; page # with sprite
    SET   6, H
    ADD   HL, BC
    INC   HL
@@ -920,8 +957,9 @@ _spr_load2::
    POP   DE
 
    LD    A, #table_page
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
 
    LD    A, (DE)
 
@@ -939,8 +977,9 @@ _spr_load2::
 
    POP   BC
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A                   ; Map 4000-7FFF to cur_page
 
    RET
 
@@ -1347,6 +1386,7 @@ JumpTable::
 ;   POP   BC
 ;   RET
 
+;modifies AHL
 or_a_vram::
 ;   PUSH  BC
 ;   LD    C, A
@@ -1624,15 +1664,28 @@ _get_event_byte::
    RLCA
    ADD   #_rom_page_events
 
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    E, (HL)
 
    LD    A, D
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
+   RET
+
+;----------------------------------------------------------------------------
+;[[ void uo_translate_cap(uword text) ]]
+;----------------------------------------------------------------------------
+_uo_translate_cap::
+   LDHL  SP, #2
+   LD    A, (HLI)
+   LD    H, (HL)
+   LD    L, A
+   LD    E, E
    RET
 
 ;----------------------------------------------------------------------------
@@ -1665,9 +1718,15 @@ _dialog_setup::
    LDH   A, (_rompage)
    LD    D, A
 
+   LD    A, (_dfs_language)
+   CP    #2
+   LD    A, #81
+   JR    Z, blah3
    LD    A, #_rom_page_text
-   LDH   (_rompage), A
-   LD    (0x2000), A
+blah3:
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    ADD   A, (HL)
    LD    (_dialogue_page), A
@@ -1683,22 +1742,24 @@ _dialog_setup::
    LD    (HL), E
 
    LD    A, D
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    RET
 
 ;----------------------------------------------------------------------------
-;[[ ubyte get_dialog_byte() ]]
+;[[ uword get_dialog_char() ]]
 ;----------------------------------------------------------------------------
-_get_dialog_byte::
+_get_dialog_char::
    LDH   A, (_rompage)
-   LD    D, A
+   PUSH  AF
 
    LD    HL, #_dialogue_page
    LD    A, (HLI)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    A, (HLI)
    LD    H, (HL)
@@ -1706,15 +1767,25 @@ _get_dialog_byte::
 
    LD    A, (HLI)
    LD    E, A
+   LD    D, #0
 
+   LD    A, (_dfs_language)
+   CP    #2
+   JR    NZ, _get_dialog_char_1byte
+
+   LD    A, (HLI)
+   LD    D, A
+
+_get_dialog_char_1byte:
    LD    A, L
    LD    (_dialogue_ptr), A
    LD    A, H
    LD    (_dialogue_ptr+1), A
 
-   LD    A, D
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   POP   AF
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
 ;----------------------------------------------------------------------------
@@ -1727,8 +1798,9 @@ _get_dialog_strlen::
 
    LD    HL, #_dialogue_page
    LD    A, (HLI)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    LD    C, A
 
@@ -1743,8 +1815,9 @@ _get_dialog_strlen::
 
    POP   BC
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
 _checkwindowlen::
@@ -2190,14 +2263,16 @@ _clear_vram_1:
    XOR   A
    JP    _STIR_VRAM
 
-crash_stuff:
-   DI
-
-   LD    A, #_rom_page_title
-   LDH   (_rompage), A
-   LD    (0x2000), A
-
-   JP    real_crash_stuff
+;;;;;; test code; most likely an on-device palette editor
+;;;;;crash_stuff:
+;;;;;   DI
+;;;;;
+;;;;;   LD    A, #_rom_page_title
+;;;;;   RST   0x30
+;;;;;   ;LDH   (_rompage), A
+;;;;;   ;LD    (0x2000), A
+;;;;;
+;;;;;   JP    real_crash_stuff
 
 _clear_vram::
    PUSH  BC
@@ -2505,14 +2580,16 @@ _getsin_join:
    LDH   A, (_rompage)
    PUSH  AF
    LD    A, #_rom_page_title
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
 
    CALL  _real_getsin
 _done_trig_join:
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
 _getarctan::
@@ -2521,8 +2598,9 @@ _getarctan::
    PUSH  AF
    PUSH  BC
    LD    A, #_rom_page_title
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    LD    A, (HLI)
    LD    B, (HL)
    LD    C, A
@@ -2568,11 +2646,13 @@ _loadmapbase::
    XOR   A                             ;
    CALL  _STIR                         ;
 
-   LD    HL, #0x2004                   ;
+   ;LD    HL, #0x2004                   ;
    LD    A, #table_page                ;
-   LDH   (_rompage), A                 ;
-   LD    (HL), A                       ; set table_page
-   ADD   HL, HL                        ;
+   ;LDH   (_rompage), A                 ;
+   ;LD    (HL), A                       ; set table_page
+   ;ADD   HL, HL                        ;
+   RST   0x30
+   LD    HL, #0x4008
 
    LD    A, (HLI)                      ; B=map start page [4008]
    LD    B, A                          ;
@@ -2622,8 +2702,9 @@ _loadmapbase::
    POP   HL                            ; HL->map on rom page
    POP   AF                            ;
 
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ; set table_page
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ; set table_page
 
    POP   AF                            ; A=mapnum
    LD    (_map_cur), A                 ; save C current map
@@ -2728,8 +2809,9 @@ done_loading:
    POP   DE                            ; E=info byte
 
    POP   AF                            ; get original page
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ; set rom page
+   RST   0x30
+   ;LDH   (_rompage), A                 ;
+   ;LD    (0x2000), A                   ; set rom page
 
    LD    A, E                          ;
    AND   #4                            ;
@@ -2750,60 +2832,138 @@ do_far_noarg::
    LDH   A, (_rompage)
    PUSH  AF
    LD    A, (HLI)
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    LD    A, (HLI)
    LD    H, (HL)
    LD    L, A
    CALL  _callhl
    POP   AF
-   LDH   (_rompage), A
-   LD    (0x2000), A
+   RST   0x30
+   ;LDH   (_rompage), A
+   ;LD    (0x2000), A
    RET
 
+
+;_addr:
+;   CALL  do_far_arg
+;   .DB   _rom_page_event2
+;   .DW   _do_text
+
 do_far_arg::
-   LD    A, (_backup_rompage)
-   INC   A
+   POP   HL                            ; HL->first byte of (.DB rom page, .DW far call addr)
+   POP   DE                            ; DE = real return address before f_call
+
+   PUSH  HL                            ; keep far call ptr
+
+   LD    HL, #_far_call_stack          ; push rompage/return address to custom stack
+   LD    A, (HLI)
+   LD    H, (HL)
+   LD    L, A                          ; HL=custom stack pointer
+
+   DEC   HL
+   LD    A, D
+   LD    (HLD), A                      ; push D
+   LD    A, E
+   LD    (HLD), A                      ; push E
+   LD    A, (HL)                       ; check next space. 0 is ok
+   OR    A
    JR    Z, _far_ok
    LD    B, B
 _far_ok:
-   POP   HL                            ;
-   LDH   A, (_rompage)                 ; save current rom page
-   LD    (_backup_rompage), A          ;
+   LDH   A, (_rompage)
+   LD    (HL), A                       ; push current rom page
+
+   LD    A, L
+   LD    (_far_call_stack), A
+   LD    A, H
+   LD    (_far_call_stack + 1), A      ; save custom stack pointer
+
+   POP   HL                            ; get far call ptr
 
    LD    A, (HLI)                      ; set rom page
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
-
+   RST   0x30
    LD    A, (HLI)                      ; HL=farcall address
    LD    H, (HL)                       ;
    LD    L, A                          ;
 
-   POP   DE                            ; hack return address
+   CALL  _callhl                       ; spoof call with args
 
-   PUSH  HL                            ; save farcall pointer
-   LD    HL, #_backup_return           ;
-   LD    A, E                          ;
-   LD    (HLI), A                      ;
-   LD    (HL), D                       ; save return address for later
-   POP   HL                            ; restore farcall pointer
+   PUSH  DE                            ; save return
 
-   CALL  _callhl                       ; call function
+   LD    HL, #_far_call_stack          ; pop from custom stack
+   LD    A, (HLI)
+   LD    H, (HL)
+   LD    L, A                          ; HL=custom stack pointer
 
-   LD    HL, #_backup_return           ; reget return address
-   LD    A, (HLI)                      ;
-   LD    H, (HL)                       ;
-   LD    L, A                          ;
+   LD    A, (HL)                       ; pop rom page
+   RST   0x30
+   XOR   A
+   LD    (HLI), A                      ; clear rom page
+   LD    E, (HL)                       ; pop E
+   LD    (HLI), A                      ; clear low byte
+   LD    D, (HL)                       ; pop D
+   LD    (HLI), A                      ; clear high byte
 
-   LD    A, (_backup_rompage)          ;
-   LDH   (_rompage), A                 ;
-   LD    (0x2000), A                   ;
+   LD    A, L
+   LD    (_far_call_stack), A
+   LD    A, H
+   LD    (_far_call_stack + 1), A      ; save custom stack pointer
 
-   LD    A, #0xFF
-   LD    (_backup_rompage), A
+   LD    H, D                          ;
+   LD    L, E                          ;
+
+   POP   DE
 
 _callhl:
    JP    (HL)                          ;
+   
+;do_far_arg::
+;   LD    A, (_backup_rompage)
+;   INC   A
+;   JR    Z, _far_ok
+;   LD    B, B
+;_far_ok:
+;   POP   HL                            ; HL->first byte of (.DB rom page, .DW far call addr)
+;   LDH   A, (_rompage)                 ; save current rom page
+;   LD    (_backup_rompage), A          ;
+;
+;   LD    A, (HLI)                      ; set rom page
+;   RST   0x30
+;   ;LDH   (_rompage), A                 ;
+;   ;LD    (0x2000), A                   ;
+;
+;   LD    A, (HLI)                      ; HL=farcall address
+;   LD    H, (HL)                       ;
+;   LD    L, A                          ;
+;
+;   POP   DE                            ; hack return address
+;
+;   PUSH  HL                            ; save farcall pointer
+;   LD    HL, #_backup_return           ;
+;   LD    A, E                          ;
+;   LD    (HLI), A                      ;
+;   LD    (HL), D                       ; save return address for later
+;   POP   HL                            ; restore farcall pointer
+;
+;   CALL  _callhl                       ; call function
+;
+;   LD    HL, #_backup_return           ; reget return address
+;   LD    A, (HLI)                      ;
+;   LD    H, (HL)                       ;
+;   LD    L, A                          ;
+;
+;   LD    A, (_backup_rompage)          ;
+;   RST   0x30
+;   ;LDH   (_rompage), A                 ;
+;   ;LD    (0x2000), A                   ;
+;
+;   LD    A, #0xFF
+;   LD    (_backup_rompage), A
+;
+;_callhl:
+;   JP    (HL)                          ;
 
 ;;void get_dotext();
 ;_f_get_dotext::
@@ -2864,29 +3024,11 @@ _f_setaluthapal::
 ;----------------------------------------------------------------------------
 ;_rom_page_battle1
 ;----------------------------------------------------------------------------
-;void wipe_menu();
-;void wipe_text();
-;void wipe_gem();
 ;void bautoproc();
 ;void player_cancel();
 ;
 ;ubyte binqueue(ubyte guy);
 ;----------------------------------------------------------------------------
-_f_wipe_menu::
-   CALL  do_far_noarg
-   .DB   _rom_page_battle1
-   .DW   _wipe_menu
-
-_f_wipe_text::
-   CALL  do_far_noarg
-   .DB   _rom_page_battle1
-   .DW   _wipe_text
-
-_f_wipe_gem::
-   CALL  do_far_noarg
-   .DB   _rom_page_battle1
-   .DW   _wipe_gem
-
 _f_bautoproc::
    CALL  do_far_noarg
    .DB   _rom_page_battle1
@@ -2909,11 +3051,8 @@ _f_player_cancel::
 ;void bchain_donext();
 ;void bchain_reset();
 ;void bchain_stop();
-;void text_update();
 ;
 ;void bchain_add(ubyte guy,ubyte action,ubyte dir,word arg1,word arg2,word arg3);
-;ubyte get_4waydir(ubyte bdir);
-;void text_init(word x,word y,word value,ubyte mode);
 ;void bpro_set(ubyte slot,word x1,word y1,word x2,word y2,ubyte steps);
 ;void bpro_next(ubyte slot);
 ;----------------------------------------------------------------------------
@@ -2937,30 +3076,15 @@ _f_bchain_stop::
    .DB   _rom_page_battle2
    .DW   _bchain_stop
 
-_f_text_update::
-   CALL  do_far_noarg
-   .DB   _rom_page_battle2
-   .DW   _text_update
-
 _f_bchain_add::
    CALL  do_far_arg
    .DB   _rom_page_battle2
    .DW   _bchain_add
 
-_f_get_4waydir::
-   CALL  do_far_arg
-   .DB   _rom_page_battle2
-   .DW   _get_4waydir
-
 ;_f_baction_poof::
 ;   CALL  do_far_arg
 ;   .DB   _rom_page_battle2
 ;   .DW   _baction_poof
-
-_f_text_init::
-   CALL  do_far_arg
-   .DB   _rom_page_battle2
-   .DW   _text_init
 
 _f_bpro_set::
    CALL  do_far_arg
@@ -2981,9 +3105,16 @@ _f_bpro_next::
 ;void gem_animate(ubyte guy);
 ;byte get_player_input(ubyte guy);
 ;void bcoloron(ubyte color);
-;void bgetreal(struct BDUDE *bch);
 ;void bshowail(ubyte guy, ubyte flop);
 ;void setbosspal(ubyte x);
+;
+;void text_init(word x,word y,word value,ubyte mode);
+;void text_update();
+;ubyte get_4waydir(ubyte bdir);
+
+;void wipe_menu();
+;void wipe_text();
+;void wipe_gem();
 ;----------------------------------------------------------------------------
 _f_bmapsetup::
    CALL  do_far_noarg
@@ -3010,11 +3141,6 @@ _f_bcoloron::
    .DB   _rom_page_battle3
    .DW   _bcoloron
 
-_f_bgetreal::
-   CALL  do_far_arg
-   .DB   _rom_page_battle3
-   .DW   _bgetreal
-
 _f_bshowail::
    CALL  do_far_arg
    .DB   _rom_page_battle3
@@ -3024,6 +3150,36 @@ _f_setbosspal::
    CALL  do_far_arg
    .DB   _rom_page_battle3
    .DW   _setbosspal
+
+_f_text_init::
+   CALL  do_far_arg
+   .DB   _rom_page_battle3
+   .DW   _text_init
+
+_f_text_update::
+   CALL  do_far_noarg
+   .DB   _rom_page_battle3
+   .DW   _text_update
+
+_f_get_4waydir::
+   CALL  do_far_arg
+   .DB   _rom_page_battle3
+   .DW   _get_4waydir
+
+_f_wipe_menu::
+   CALL  do_far_noarg
+   .DB   _rom_page_battle3
+   .DW   _wipe_menu
+
+_f_wipe_text::
+   CALL  do_far_noarg
+   .DB   _rom_page_battle3
+   .DW   _wipe_text
+
+_f_wipe_gem::
+   CALL  do_far_noarg
+   .DB   _rom_page_battle3
+   .DW   _wipe_gem
 
 ;----------------------------------------------------------------------------
 ;_rom_page_battle4
@@ -3184,26 +3340,57 @@ _f_getdistxy::
 ;_rom_page_battle5
 ;----------------------------------------------------------------------------
 ;void baction_nextmore();
+;
+;void load_saveinfo(UBYTE slot);
+;void savegame(UBYTE slot);
+;void loadgame(UBYTE slot);
+
+;void stats_recalc(struct DUDESTAT *guy);
 ;----------------------------------------------------------------------------
 _f_baction_nextmore::
    CALL  do_far_noarg
    .DB   _rom_page_battle5
    .DW   _baction_nextmore
 
+_f_load_saveinfo::
+   CALL  do_far_arg
+   .DB   _rom_page_battle5
+   .DW   _load_saveinfo
+
+_f_savegame::
+   CALL  do_far_arg
+   .DB   _rom_page_battle5
+   .DW   _savegame
+
+_f_loadgame::
+   CALL  do_far_arg
+   .DB   _rom_page_battle5
+   .DW   _loadgame
+
+_f_stats_recalc::
+   CALL  do_far_arg
+   .DB   _rom_page_battle5
+   .DW   _stats_recalc
+
 ;----------------------------------------------------------------------------
 ;_rom_page_battle6
 ;----------------------------------------------------------------------------
 ;void start_skill();
+;void bgetreal(struct BDUDE *bch);
 ;----------------------------------------------------------------------------
 _f_start_skill::
    CALL  do_far_noarg
    .DB   _rom_page_battle6
    .DW   _start_skill
 
+_f_bgetreal::
+   CALL  do_far_arg
+   .DB   _rom_page_battle6
+   .DW   _bgetreal
+
 ;----------------------------------------------------------------------------
 ;_rom_page_menu1
 ;----------------------------------------------------------------------------
-;void items_reset();
 ;void curflick_off();
 ;void menu_error();
 ;void slide_out_menu();
@@ -3214,14 +3401,8 @@ _f_start_skill::
 ;void items_set(ubyte type,ubyte value);
 ;void curflick_on(ubyte x,ubyte y);
 ;void show_menu(ubyte type);
-;void stats_recalc(struct DUDESTAT *guy);
 ;void slide_in_menu(ubyte num);
 ;----------------------------------------------------------------------------
-_f_items_reset::
-   CALL  do_far_noarg
-   .DB   _rom_page_menu1
-   .DW   _items_reset
-
 _f_curflick_off::
    CALL  do_far_noarg
    .DB   _rom_page_menu1
@@ -3267,11 +3448,6 @@ _f_show_menu::
    .DB   _rom_page_menu1
    .DW   _show_menu
 
-_f_stats_recalc::
-   CALL  do_far_arg
-   .DB   _rom_page_menu1
-   .DW   _stats_recalc
-
 _f_slide_in_menu::
    CALL  do_far_arg
    .DB   _rom_page_menu1
@@ -3289,6 +3465,8 @@ _f_slide_in_menu::
 ;void do_slmenu(ubyte type);
 ;void gain_level(struct DUDESTAT *guy);
 ;ubyte *get_expnext(ubyte lv);
+
+;void items_reset();
 ;----------------------------------------------------------------------------
 _f_do_shopmenu::
    CALL  do_far_noarg
@@ -3334,3 +3512,27 @@ _f_copyright::
    CALL  do_far_noarg
    .DB   _rom_page_event2
    .DW   _copyright
+
+_f_items_reset::
+   CALL  do_far_noarg
+   .DB   _rom_page_event2
+   .DW   _items_reset
+
+
+
+;rom_page_logo
+_f_showlogo::
+   CALL do_far_noarg
+   .DB _rom_page_logo
+   .DW _showlogo
+
+_f_version::
+   CALL do_far_noarg
+   .DB _rom_page_logo
+   .DW _showversion
+
+;rom_page_cutscene
+_f_viewcutscene::
+   CALL do_far_arg
+   .DB _rom_page_cutscene
+   .DW _viewcutscene

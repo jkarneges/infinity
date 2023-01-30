@@ -143,6 +143,8 @@ intro_scene0A:
    fadeout(X_FADESLOW)
    sleep(32)
 
+   cutscene(0)
+
    partyset(3,0)
    goto(intro_scene0B)
 

@@ -979,165 +979,11 @@ shopdone:
    f_slide_out_menu();
 }
 
-UBYTE *fileptr;
-void write(void *block, UBYTE size)
-{
-   memcpy(fileptr, block, (UWORD)size);
-   fileptr += size;
-}
-
-void read(void *block, UBYTE size)
-{
-   memcpy(block, fileptr, (UWORD)size);
-   fileptr += size;
-}
-
-UBYTE ss_active;
-UBYTE ss_level, ss_area, ss_hour, ss_min;
-UBYTE ss_num;
-UBYTE ss_type[4];
-UBYTE ss_options[7];
-UBYTE savesig[8];
-char slsig[8] = "BONJAHL";
-
-void load_saveinfo(UBYTE slot)
-{
-   UBYTE lastpage;
-   UBYTE gametime[4];
-
-   fopen(slot);
-   lastpage = ram_page(5);
-   fileptr = (UBYTE *)0xD800;
-
-   read(savesig, 7);
-   savesig[7] = 0;
-   if(strcmp((UBYTE *)savesig, slsig)) {
-      ss_active = 0;
-      ram_page(lastpage);
-      return;
-   }
-   ss_active = 1;
-
-   read(&ss_num, 1);
-   if(ss_num > 4)
-      ss_num = 4;
-   read(&ss_type, 4);
-   read(&ss_level, 1);
-   read(&ss_area, 1);
-   read(gametime, 4);
-   read(ss_options, 7);
-
-   ss_hour = gametime[0];
-   ss_min = gametime[1];
-
-   ram_page(lastpage);
-}
-
-
-void savegame(UBYTE slot)
-{
-   UBYTE a[4];
-   UBYTE n, at;
-   UBYTE lastpage;
-   UBYTE level;
-
-   area = regs[0];
-
-   fopen(slot);
-   lastpage = ram_page(5);
-   fileptr = (UBYTE *)0xD800;
-
-   write(slsig, 7);
-   for(at = 0, n = 0; n != 4; ++n) {
-      st = get_realparty(n);
-      if(st) {
-         if(at == 0)
-            level = st->level;
-         a[at++] = st->type;
-      }
-   }
-   write(&at, 1);
-   write(a, 4);
-   write(&level, 1);
-   write(&area, 1);
-   disable_interrupts();
-   a[0] = gametime[0];
-   a[1] = gametime[1];
-   a[2] = gametime[2];
-   a[3] = gametime[3];
-   enable_interrupts();
-   write(a, 4);
-   write(options, 7);
-   write(&lastsaveslot, 1);
-   write(party, 4);
-   write(realparty, 4);
-   for(n = 0; n != 6; ++n)
-      write(&stats[n], sizeof(struct DUDESTAT));
-   write(vars, 96);
-   write(flags, 32);
-   write(regs, 8);
-   write(item_list_type, 100);
-   write(item_list_num, 100);
-   write(gems_list, 9);
-   write(gems_charge, 9);
-   write(gold, 3);
-   write(&boat_x, 1);
-   write(&boat_y, 1);
-   write(&boat_dir, 1);
-
-   ram_page(lastpage);
-
-   fclose(slot);
-}
-
-void loadgame(UBYTE slot)
-{
-   UBYTE a[4];
-   UBYTE n, at;
-   UBYTE lastpage;
-   UBYTE level;
-   UBYTE c;
-
-   fopen(slot);
-   lastpage = ram_page(5);
-   fileptr = (UBYTE *)0xD800;
-
-   read(slsig, 7);
-   read(&at, 1);
-   read(a, 4);
-   read(&level, 1);
-   read(&area, 1);
-   read(a, 4);
-   disable_interrupts();
-   gametime[0] = a[0];
-   gametime[1] = a[1];
-   gametime[2] = a[2];
-   gametime[3] = a[3];
-   enable_interrupts();
-   read(options, 7);
-   read(&lastsaveslot, 1);
-   read(party, 4);
-   read(realparty, 4);
-   for(n = 0; n != 6; ++n)
-      read(&stats[n], sizeof(struct DUDESTAT));
-   read(vars, 96);
-   read(flags, 32);
-//   for(n = 0; n != 32; ++n)
-//      flags[n] = 0;
-   read(regs, 8);
-   read(item_list_type, 100);
-   read(item_list_num, 100);
-   read(gems_list, 9);
-   read(gems_charge, 9);
-   read(gold, 3);
-   read(&boat_x, 1);
-   read(&boat_y, 1);
-   read(&boat_dir, 1);
-
-   ram_page(lastpage);
-
-   fclose(slot);
-}
+extern UBYTE ss_active;
+extern UBYTE ss_level, ss_area, ss_hour, ss_min;
+extern UBYTE ss_num;
+extern UBYTE ss_type[4];
+extern UBYTE ss_options[7];
 
 UBYTE grad_slm_table[3] = { 24, 64, 104 };
 
@@ -1150,7 +996,7 @@ void start_gradient_slm_real()
    grad_init();
 
    for(n = 0; n != 3; ++n) {
-      load_saveinfo(n);
+      f_load_saveinfo(n);
       if(ss_active)
          load_gradcolors(ss_options + 1);
       else
@@ -1181,7 +1027,7 @@ void sl_redraw(UBYTE x)
    point_str(sl_textbase + x * 16, 16);
    start_gradient_slm_real();
 
-   load_saveinfo(x);
+   f_load_saveinfo(x);
    //if(!ss_active)
    // while(1);
 
@@ -1262,7 +1108,7 @@ UBYTE do_slmenu(UBYTE type)
 
    // read in the save games
    for(n2 = 0; n2 != 3; ++n2) {
-      load_saveinfo(n2);
+      f_load_saveinfo(n2);
       active[n2] = ss_active;
 
       point_str(sl_textbase + n2 * 16, 16);
@@ -1391,7 +1237,7 @@ UBYTE do_slmenu(UBYTE type)
             if(type == 0) {
                if(active[index-1]) {
                   play_sfx(SFX_MENUACCEPT);
-                  loadgame(index-1);
+                  f_loadgame(index-1);
                   break;
                }
             }
@@ -1442,7 +1288,7 @@ UBYTE do_slmenu(UBYTE type)
 
                if(saveok) {
                   lastsaveslot = index - 1;
-                  savegame(lastsaveslot);
+                  f_savegame(lastsaveslot);
                   sl_redraw(lastsaveslot);
                   break;
                }

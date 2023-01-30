@@ -19,6 +19,8 @@
 #include"defs.h"
 #include"vars.h"
 
+#include "events_def.h"
+
 extern UBYTE demo_reset;
 
 #define REGBASE      0xF8
@@ -170,6 +172,9 @@ extern UBYTE demo_reset;
 #define ACTION_POEM      0x2f
 #define ACTION_BOSSPAL   0x38
 
+#define ACTIONSIZE   12
+#define MAXACTIONS   8
+#define MAXCASES        36
 
 // vars
 extern BYTE *local_event;
@@ -180,6 +185,37 @@ extern BYTE numcases;
 extern UWORD actionp, actionptmp[];
 extern BYTE lastmoves[];
 extern struct DUDESTRUCT ch[];
+
+extern UBYTE *map;       // map pointer
+extern WORD sx, sy;         // camera coordinates
+extern struct DUDESTRUCT ch[12];  // character structs
+extern UBYTE allow_scroll;
+extern UBYTE numdudes;         // max characters on the map
+extern UBYTE maplenx, mapleny;    // dimensions of the map
+extern UBYTE control;       // player has control?
+extern UBYTE pullparty;     // pull the party with player?
+extern BYTE whotalk;        // who you're attempting to talk to
+extern UBYTE prev_dir;         // use to set a guy's dir back after a talk
+extern UBYTE talk_dir;      // what a guy's dir would be if not in framemode
+extern UBYTE show_realparty;      // show real party arrangment?
+
+extern UBYTE in_fade;
+
+extern UBYTE instep;
+extern BYTE insearch;       // attempting to search?
+extern UBYTE searchx[2], searchy[2]; // the coords
+
+extern UBYTE scroll_on;
+extern UBYTE scroll_guy;
+extern UBYTE scroll_x, scroll_y;
+
+extern UBYTE nighttime;
+
+extern UBYTE maindir;
+
+extern UBYTE pal_bak[];
+extern UWORD pal_cur[];
+extern UWORD pal[];
 
 void poem(UBYTE opt);
 
@@ -209,11 +245,544 @@ BYTE get_action2()
    UBYTE c;
    UBYTE n, n2;
    UBYTE op1, op2;
+   UBYTE num;
+   WORD x, y;
+   UBYTE type;
+   UBYTE dir, con;
+   UWORD var, eve;
+   UBYTE lo, hi;
+   UBYTE ask[3];
+
    struct DUDESTAT *st;
+   struct DUDESTRUCT *ds;
 
    c = pass_c;
 
    switch(c) {
+      case ACTION_WALK:
+      case ACTION_WALK2:
+         local_action = action_table[numactions];
+         local_action[0] = ACTION_WALK;
+         n = enext();
+         local_action[1] = n;
+         local_action[2] = enext();
+         n2 = enext();
+
+         // if it's not a townsperson, then double the movement
+         if(c != ACTION_WALK2) {
+            if(n < 4 || ch[n].type == TYPE_BOAT)
+               n2 <<= 1;
+         }
+         local_action[3] = n2;
+
+         if(ch[n].active)
+            ++numactions;
+         break;
+
+      case ACTION_WARP:
+                case ACTION_WARP2:
+         ds = &ch[enext()];
+         x = enext();
+         y = enext();
+                        if(c == ACTION_WARP) {
+                                x <<= 1;
+                                y <<= 1;
+                        }
+         dir = enext();
+
+         ds->x = x;
+         ds->y = y;
+         ds->gx = x * 8;
+         ds->gy = y * 8;
+         ds->dir = dir;
+         break;
+
+      case ACTION_FRAME:
+         ds = &ch[enext()];
+         op1 = enext();
+
+         frame = getbaseframe(ds->type);
+         ds->framemode = 1;
+         ds->frame = frame + op1;
+         break;
+
+      case ACTION_ANIM:
+         ch[enext()].animmode = 1;
+         break;
+
+      case ACTION_UNFRAME:
+         ds = &ch[enext()];
+         ds->dir = talk_dir; // face direction of most recent talk action
+         ds->framemode = 0;
+         ds->animmode = 0;
+         break;
+
+      case ACTION_CATCHUP:
+         action_catchup = 1;
+         action_sleep = -1;
+         break;
+
+      case ACTION_SAYAUTO:
+         text_auto = enext();
+         break;
+
+      case ACTION_POSXY:
+         local_action = action_table[numactions];
+         local_action[0] = c;
+         local_action[1] = enext() << 1;
+         local_action[2] = enext() << 1;
+         ++numactions;
+         break;
+
+      case ACTION_SLEEP:
+         action_catchup = 1;
+         action_sleep = enext();
+         break;
+
+      case ACTION_FACE:
+         ds = &ch[enext()];
+         ds->dir = enext();
+         ds->framemode = 0;
+         ds->animmode = 0;
+         break;
+
+      case ACTION_LOCKON:
+         scroll_guy = enext();
+         scroll_on = 1;
+         break;
+
+      case ACTION_PAN:
+                        if(map_state)
+                 scroll_x = (enext()&31) + (map_state << 5);
+                        else
+                                scroll_x = enext();
+         scroll_y = enext();
+         scroll_on = 2;
+         break;
+
+      case ACTION_PANREL:
+         sx += (BYTE)enextraw() << 3;
+         sy += (BYTE)enextraw() << 3;
+         scroll_on = 0;
+         break;
+
+      case ACTION_LOCKOFF:
+         scroll_on = 0;
+         break;
+
+      case ACTION_CAMERA:
+         x = (WORD)enext() << 4;
+         y = (WORD)enext() << 4;
+                  sx = x - 80 + 8;
+                   sy = y - 72 + 8;
+         if(!allow_scroll)
+            fix_camera();
+         scroll_on = 0;
+         owe_redraw(sx, sy);
+         break;
+
+      case ACTION_LDUDE:
+         num = enext();
+         type = enext();
+         n = enext();
+         n2 = enext();
+         dir = enext();
+         con = enext();
+
+         f_loaddude(num, n, n2, type, dir, con);
+         break;
+
+      case ACTION_LGUY:
+         type = enext();
+         n = enext();
+         n2 = enext();
+         lo = enextraw();
+         hi = enextraw();
+
+         // find a free spot
+         for(i = 4; i != numdudes; ++i) {
+            if(!ch[i].active)
+               break;
+         }
+
+         // load the guy
+         f_loaddude(i, n, n2, type, DOWN, WALK);
+
+         // associate the talking event
+         local_event[0] = CASE_GUY;
+         local_event[1] = lo;
+         local_event[2] = hi;
+         local_event[3] = i;
+         ++numcases;
+         break;
+
+      case ACTION_SONG:
+         /*if(!demo_key)
+            play_song(enext());
+         else
+            enext();
+         break;*/
+#ifndef NO_MUSIC
+         play_song(enext());
+#else
+         enext();
+#endif
+         break;
+
+      case ACTION_BSONG:
+         bsong = (enext() + 1);
+         break;
+
+      case ACTION_SFX:
+         play_sfx(enext());
+         break;
+
+      case ACTION_CONTROL:
+         control = enext();
+         ch[0].req = NORM;
+         break;
+
+      case ACTION_GOTO:
+      case ACTION_CALL:
+         lo = enextraw();
+         hi = enextraw();
+         if(c == ACTION_CALL)
+            actionptmp[actionpstack++] = actionp;
+         actionp = (UWORD)hi << 8;
+         actionp += lo;
+         break;
+
+      case ACTION_TILE:
+         n = enext();
+         n2 = enext();
+         num = enext();
+
+         //debug_on = 0;
+
+         map_settype(n, n2, num);
+         //copy_page(1, 3);
+         //debug_on = 1;
+         break;
+
+      // logic
+      case ACTION_IF:
+      case ACTION_CIF:
+         op1 = enext();
+         n = enext();
+         op2 = enext();
+         lo = enextraw();
+         hi = enextraw();
+
+         eve = (UWORD)hi << 8;
+         eve += lo;
+
+         if((n == 0 && op1 > op2) ||
+            (n == 1 && op1 >= op2)||
+            (n == 2 && op1 == op2)||
+            (n == 3 && op1 <= op2)||
+            (n == 4 && op1 < op2) ||
+            (n == 5 && op1 != op2)) {
+            if(c == ACTION_CIF)
+               actionptmp[actionpstack++] = actionp;
+            actionp = eve;
+         }
+         break;
+
+      case ACTION_SET:
+      case ACTION_ADD:
+      case ACTION_SUB:
+         op1 = enextraw();
+         op2 = enext();
+
+         if(op1 < REGBASE)
+            while(1);
+         n = op1 - REGBASE;
+         op1 = getreg(op1);
+         if(c == ACTION_ADD)
+            n2 = op1 + op2;
+         else if(c == ACTION_SUB)
+            n2 = op1 - op2;
+         else
+            n2 = op2;
+
+         regs[n] = n2;
+         break;
+
+      case ACTION_INC:
+      case ACTION_DEC:
+         op1 = enextraw();
+         if(op1 < REGBASE)
+            while(1);
+         n = op1 - REGBASE;
+         op1 = getreg(op1);
+         regs[n] = op1 + (c == ACTION_INC ? 1: -1);
+         break;
+
+      case ACTION_GET:
+         op1 = enextraw();
+         lo = enextraw();
+         hi = enextraw();
+         var = (UWORD)hi << 8;
+         var += lo;
+
+         n2 = vars[var];
+         if(op1 < REGBASE)
+            while(1);
+         n = op1 - REGBASE;
+         regs[n] = n2;
+         break;
+
+      case ACTION_PUT:
+         op1 = enext();
+         lo = enextraw();
+         hi = enextraw();
+         var = (UWORD)hi << 8;
+         var += lo;
+
+         vars[var] = op1;
+         break;
+
+      // party related
+      case ACTION_PARTYSET:
+         op1 = enext();
+         op2 = enext();
+         lo = realparty[op1];
+         realparty[op1] = op2;
+
+         for(n = 0; n != 4; ++n) {
+            if(lo) {
+               if(party[n] == lo)
+                  break;
+            }
+            else {
+               if(!party[n])
+                  break;
+            }
+         }
+         party[n] = op2;
+
+         break;
+
+      case ACTION_LEVELUP:
+         op1 = enext();
+         st = get_realparty(op1);
+         if(st)
+            f_catchup_level(st);
+         break;
+
+      case ACTION_PANSPEED:
+         owe_panspeed(enext());
+         break;
+
+      case ACTION_DETACH:
+         pullparty = 0;
+         break;
+
+      case ACTION_CGOLD:
+         op1 = enextraw();
+         op1 = op1 - REGBASE;
+
+         lo = enextraw();
+         hi = enextraw();
+         var = (UWORD)hi << 8;
+         var += lo;
+
+         set_24(ask, var);
+         if(cmp_24(gold, ask) >= 0)
+            regs[op1] = 1;
+         else
+            regs[op1] = 0;
+         break;
+
+      case ACTION_TGOLD:
+         lo = enextraw();
+         hi = enextraw();
+         var = (UWORD)hi << 8;
+         var += lo;
+
+         if(var) {
+            set_24(ask, var);
+            if(cmp_24(gold, ask) >= 0)
+               sub_24(gold, ask);
+            else
+               set_24(gold, 0);
+         }
+         else
+            set_24(gold, 0);
+
+         break;
+
+      case ACTION_SHOPRES:
+         f_shop_reset();
+         break;
+
+      case ACTION_SHOPADD:
+      case ACTION_SHOPADD2:
+         n = enext();
+
+         if(c == ACTION_SHOPADD2) {
+            lo = enextraw();
+            hi = enextraw();
+            var = (UWORD)hi << 8;
+            var += lo;
+         }
+         else {
+            var = item_buycost(n);
+         }
+         //var = 0;
+         f_shop_add(n, var);
+         break;
+
+      case ACTION_YESNO:
+         op1 = enextraw();
+         op1 -= REGBASE;
+         isyesno = op1 + 1;
+         break;
+
+      case ACTION_ZONE:
+         encounter_zone = enext();
+         break;
+
+      case ACTION_TREASURE:
+         // flag, x, y, gfx, sfx, contents
+         n = enext();
+         lo = enext();
+         hi = enext();
+         op1 = enext();
+         op2 = enext();
+         n2 = enext();
+         // already set?  show it as opened
+         if(flag_get(n)) {
+            if(op1) {
+               map_settype(lo, hi, op1);
+               //map[(UWORD)hi * maplenx + lo] = op1;
+               //copy_page(1,3);
+               //debug_on = 1;
+               //owe_update(lo, hi);
+            }
+         }
+         // otherwise add to cases
+         else {
+            local_event = event_cases[numcases];
+            local_event[0] = CASE_TREASURE;     // search
+            local_event[1] = op1;
+            local_event[2] = op2;
+            local_event[3] = lo;    // x
+            local_event[4] = hi;    // y
+            //local_event[5] = 16;
+            local_event[5] = n;
+            local_event[6] = n2;
+            ++numcases;
+         }
+         break;
+
+      case ACTION_HEALALL:
+      case ACTION_REVIVE:
+         for(n = 0; n != 4; ++n) {
+            st = get_party(n);
+            if(!st)
+               continue;
+
+            if(c == ACTION_REVIVE) {
+               if(st->hp == 0)
+                  st->hp = 1;
+            }
+            else {
+               st->hp = st->hpmax;
+               st->sp = st->spmax;
+            }
+         }
+         break;
+
+      case ACTION_COLSHIFT:
+         f_colorshift(enext());
+         break;
+
+      case ACTION_COLSHIFT2:
+         op1 = pfs_targetspr;
+         pfs_targetspr = 0;
+         pfs_setup(pal_cur, (UWORD *)enext(), 32);
+         pfs_targetspr = op1;
+         in_fade = 16;
+         break;
+
+      case ACTION_DARKEN:
+         op1 = pfs_targetspr;
+         pfs_targetspr = 0;
+         pfs_setup(pal_cur, (UWORD *)COLOR_GRDKISLE, 64);
+         pfs_targetspr = op1;
+         in_fade = 48;
+         break;
+
+      case ACTION_PROPHECY:
+         f_prophecy();
+         break;
+
+      case ACTION_TBASE:
+         lo = enextraw();
+         hi = enextraw();
+         tbase = (UWORD)hi << 8;
+         tbase += lo;
+         tbaselen = enext();
+         tbasemul = enext();
+         break;
+
+      case ACTION_SONGOFF:
+              stop_song();
+         break;
+
+      case ACTION_SONGPAUSE:
+              pause_song();
+         break;
+
+      case ACTION_SONGRESUME:
+              resume_song();
+         break;
+
+      case ACTION_HITSTATE:
+         hit_state = enext();
+         break;
+
+      case ACTION_QUAKE:
+         bspr_quake ^= 1;
+         break;
+
+      case ACTION_SETZ:
+         n = enext();
+         ch[n].gz = enext();
+         break;
+
+      case ACTION_SETWOLF:
+         n = enext();
+         stats[3].type = n ? VICTOR_WOLF: VICTOR;
+                        if(n == 0)
+                           strcpy(stats[3].class, "Guide");
+         break;
+      case ACTION_SETWOLFP:
+         n = enext();
+         stats[3].wolfpow = n;
+         f_stats_recalc(&stats[3]);
+         break;
+
+      case ACTION_RAND:
+         op1 = enextraw();
+         regs[op1 - REGBASE] = (UBYTE)randfunc() % enext();
+         break;
+
+      case ACTION_PALSET:
+         enext();
+                        w4vbl_done();
+         whiteout();
+         break;
+      case ACTION_PALNORM:
+                        w4vbl_done();
+         setcurpal();
+         break;
+      case ACTION_SETBOAT:
+         boat_x = enext();
+         boat_y = enext();
+         break;
+
       case ACTION_CSTEP:
       case ACTION_CQSTEP:
          local_event[0] = c == ACTION_CSTEP ? CASE_STEP : CASE_QSTEP;   // step
@@ -395,10 +964,6 @@ BYTE get_action2()
    return 1;
 }
 
-extern UBYTE pal_bak[];
-extern UBYTE pal_cur[];
-extern UWORD pal[];
-
 #include"poem.c"
 
 UWORD aluthapal[] = {
@@ -504,4 +1069,59 @@ void copyright()
    pfs_targetspr=0xFC;
 
    do_delay(30);
+}
+
+void items_reset()
+{
+   item_num = 100;
+
+   for(n = 0; n < 100; ++n) {
+      item_list_type[n]   = 0;
+      item_list_num[n]    = 0;
+   }
+   for(n = 0; n < 9; ++n) {
+      gems_list[n] = 0;
+      gems_charge[n] = 0;
+   }
+
+   // gem #5 [6] is unused! (Opal)
+
+/* gems_add(12, 99);
+   gems_add( 2, 99);
+   gems_add( 3, 99);
+   gems_add( 4, 99);
+   gems_add(11, 99);*/
+
+// gems_add( 7, 99);
+// gems_add( 8, 99);
+// gems_add( 9, 99);
+// gems_add(10, 99);
+// gems_add(11, 99);
+// gems_add(12, 99);
+// gems_add(13, 99);
+// gems_add(14, 99);
+// gems_add(16, 99);
+
+/* items_add(1);
+   items_add(6);
+
+   items_add(1);
+   items_add(2);
+   items_add(3);
+   items_add(4);
+   items_add(5);
+   items_add(6);
+   items_add(7);
+   items_add(7);
+   items_add(7);
+
+   gems_add(1);
+   gems_add(2);
+   gems_add(3);
+   gems_add(4);
+   gems_add(5);
+   gems_add(6);
+   gems_add(7);
+   gems_add(8);
+   gems_add(9);*/
 }
