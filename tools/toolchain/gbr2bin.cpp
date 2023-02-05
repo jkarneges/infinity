@@ -30,6 +30,7 @@ typedef unsigned short word;
 typedef unsigned int dword;
 
 #define OBJECT_TYPE_TILEDATA 0x0002
+#define OBJECT_TYPE_PAL      0x000D
 #define OBJECT_TYPE_TILEPAL  0x000E
 
 // opens header and checks for header id
@@ -142,6 +143,26 @@ word GBR_ExportPals( byte *array, byteVector_t *result ) {
 	return count;
 }
 
+struct Palette {
+	word color[4];
+};
+
+Palette ParsePalette( dword *colors ) {
+	Palette out;
+
+	for( int i = 0; i < 4; i++ ) {
+		// deconstruct 32-bit RGBx
+		byte r = colors[i] & 0xff;
+		byte g = (colors[i] >> 8) & 0xff;
+		byte b = (colors[i] >> 16) & 0xff;
+
+		// construct 15-bit RGB
+		out.color[i] = (((word)b >> 3) << 10) + (((word)g >> 3) << 5) + (r >> 3);
+	}
+
+	return out;
+}
+
 int main(int argc, char* argv[])
 {
 	// gbr2bin gbr_file bin_file [first_tilenum] [last_tilenum]
@@ -154,6 +175,7 @@ int main(int argc, char* argv[])
 	if( argc < 3 ) {
 		printf("Usage:\n");
 		printf("gbr2bin gbr_file bin_file [/nopal] [ [first_tilenum] [last_tilenum] ... ]\n");
+		printf("gbr2bin gbr_file /printpal\n");
 		return 1;
 	}
 
@@ -162,6 +184,32 @@ int main(int argc, char* argv[])
 		printf("couldn't open %s!\n", argv[1]);
 		return 1;
 	}
+
+	if( !strcmp( argv[2], "/printpal" ) ) {
+		// read and check for valid header
+		if( !GBR_ReadHeader( fGBR ) ) {
+			printf("%s invalid file format!\n", argv[1]);
+			return 1;
+		}
+
+		while( !feof( fGBR ) ) {
+			byteVector_t block;
+			word type = GBR_ReadBlock( &block, 0, fGBR );
+
+			if( type != OBJECT_TYPE_PAL )
+				continue;
+
+			word count = *(word *)&block[2];
+			dword *paldata = (dword *)&block[4];
+
+			for( int i = 0; i < count; i++ ) {
+				Palette pal = ParsePalette(paldata + (i * 4));
+				printf("%d: 0x%04x, 0x%04x, 0x%04x, 0x%04x\n", i, pal.color[0], pal.color[1], pal.color[2], pal.color[3]);
+			}
+		}
+
+		return 0;
+        }
 
 	// open bin file for output
 	if( !( fBIN = fopen( argv[2], "wb" ) ) ) {
