@@ -33,6 +33,10 @@ struct ENEMYREF
 	int index;
 	int exp, au, item;
 	char ai[16];
+	int level, hp, sp;
+	int str, end, agl, wis;
+	int att, def, spd, mgd;
+	char fire, water, wind, weapon;
 };
 
 struct ZONEREF
@@ -114,7 +118,7 @@ int xrevref_zone(int x)
 	return -1;
 }
 
-void addref_enemy(int index, char *name, int exp, int au, int item, char *ai)
+void addref_enemy(int index, char *name, int level, int hp, int sp, int str, int end, int agl, int wis, int att, int def, int spd, int mgd, char fire, char water, char wind, char weapon, int exp, int au, int item, char *ai)
 {
 	if(index >= 150) {
 		printf("ERROR: [%s] is set out of range (%d).\n", name, index);
@@ -128,6 +132,22 @@ void addref_enemy(int index, char *name, int exp, int au, int item, char *ai)
 	enemyref[enemyref_num].au    = au;
 	enemyref[enemyref_num].item  = item;
 
+	enemyref[enemyref_num].level  = level;
+	enemyref[enemyref_num].hp     = hp;
+	enemyref[enemyref_num].sp     = sp;
+	enemyref[enemyref_num].str    = str;
+	enemyref[enemyref_num].end    = end;
+	enemyref[enemyref_num].agl    = agl;
+	enemyref[enemyref_num].wis    = wis;
+	enemyref[enemyref_num].att    = att;
+	enemyref[enemyref_num].def    = def;
+	enemyref[enemyref_num].spd    = spd;
+	enemyref[enemyref_num].mgd    = mgd;
+	enemyref[enemyref_num].fire   = fire;
+	enemyref[enemyref_num].water  = water;
+	enemyref[enemyref_num].wind   = wind;
+	enemyref[enemyref_num].weapon = weapon;
+
 	memcpy(enemyref[enemyref_num].ai, ai, 16);
 
 	++enemyref_num;
@@ -140,6 +160,52 @@ void addref_zone(int num, int index)
 	zoneref[zoneref_num].index = index;
 
 	++zoneref_num;
+}
+
+char elem_char(char value) {
+	switch(value) {
+		case 0: return 'W';
+		case 1: return '-';
+		case 2: return 'S';
+		default: return '-';
+	}
+}
+
+char from_elem_char(char ch) {
+	switch(ch) {
+		case 'W': return 0;
+		case '-': return 1;
+		case 'S': return 2;
+		default: return 1;
+	}
+}
+
+int getnameindex(char *inbuf, int *index, char *name, char **remainder)
+{
+	char *p;
+	int a_index;
+	char a_name[256];
+	char *left;
+
+	p = getToken(&inbuf, ":");
+	if(!p)
+		return 0;
+	a_index = atoi(p);
+	if(!inbuf)
+		return 0;
+	char *next = strchr(inbuf, ':');
+	if(!next)
+		return 0;
+	*next = '\0';
+	p = inbuf;
+	left = next + 1;
+	strcpy(a_name, p);
+
+	*index = a_index;
+	strcpy(name, a_name);
+	*remainder = left;
+
+	return 1;
 }
 
 int readrefs_enemy(char *fname)
@@ -159,38 +225,116 @@ int readrefs_enemy(char *fname)
 		fgets(line, 255, f);
 		if(feof(f))
 			break;
-		p = line;
-		p2 = getToken(&p, ",:\r\n");
-		if(!p2)
-			continue;
-		index = atoi(p2);
-		p2 = getToken(&p, ",:\r\n");
-		if(!p2)
-			continue;
-		strcpy(name, p2);
-		p2 = getToken(&p, ",:\r\n");
-		if(!p2)
-			continue;
-		exp = atoi(p2);
-		p2 = getToken(&p, ",:\r\n");
-		if(!p2)
-			continue;
-		au = atoi(p2);
-		p2 = getToken(&p, ",:\r\n");
-		if(!p2)
-			continue;
-		item = atoi(p2);
 
-		memset(ai, 0, 16);
-		// check for ai
-		for(n = 15; n >= 0; --n) {
-			p2 = getToken(&p, ",:\r\n");
-			if(!p2)
-				continue;
-			ai[n] = atoi(p2);
+		int line_len = strlen(line);
+		if(line_len > 0 && line[line_len-1] == '\n') {
+			line[line_len-1] = 0;
+			--line_len;
+		}
+		if(line_len > 0 && line[line_len-1] == '\r') {
+			line[line_len-1] = 0;
+			--line_len;
 		}
 
-		addref_enemy(index, name, exp, au, item, ai);
+		p = strchr(line, '#');
+		if(p)
+			*p = 0;
+
+		if(strlen(line) == 0)
+			continue;
+
+		char *remainder = NULL;
+		if(!getnameindex(line, &index, name, &remainder) || remainder == NULL)
+			return 0;
+
+		if(strlen(remainder) > 0 && remainder[0] == ' ') {
+			p = remainder;
+
+			p2 = strtok(p, " \t\r\n"); if(!p2) return 0;
+			int level = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int hp = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int sp = atoi(p2);
+
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int str = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int end = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int agl = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int wis = atoi(p2);
+
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int att = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int def = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int spd = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int mgd = atoi(p2);
+
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			if(strlen(p2) != 4)
+				return 0;
+			char fire = from_elem_char(p2[0]);
+			char water = from_elem_char(p2[1]);
+			char wind = from_elem_char(p2[2]);
+			char weapon = from_elem_char(p2[3]);
+
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int exp = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int au = atoi(p2);
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			int item = 0;
+			if(strcmp(p2, "-") != 0)
+				item = atoi(p2);
+
+			char ai[16];
+			memset(ai, 0, 16);
+
+			p2 = strtok(NULL, " \t\r\n"); if(!p2) return 0;
+			if(strcmp(p2, "-") != 0) {
+				p = p2;
+				for(n = 15; n >= 0; --n) {
+					p2 = getToken(&p, ",:\r\n");
+					if(!p2)
+						continue;
+					ai[n] = atoi(p2);
+				}
+			}
+
+			addref_enemy(index, name, level, hp, sp, str, end, agl, wis, att, def, spd, mgd, fire, water, wind, weapon, exp, au, item, ai);
+		}
+		else {
+			p = remainder;
+
+			p2 = getToken(&p, ",:\r\n");
+			if(!p2)
+				return 0;
+			exp = atoi(p2);
+			p2 = getToken(&p, ",:\r\n");
+			if(!p2)
+				return 0;
+			au = atoi(p2);
+			p2 = getToken(&p, ",:\r\n");
+			if(!p2)
+				return 0;
+			item = atoi(p2);
+
+			memset(ai, 0, 16);
+			// check for ai
+			for(n = 15; n >= 0; --n) {
+				p2 = getToken(&p, ",:\r\n");
+				if(!p2)
+					continue;
+				ai[n] = atoi(p2);
+			}
+
+			addref_enemy(index, name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, exp, au, item, ai);
+		}
 	}
 	fclose(f);
 
@@ -314,7 +458,6 @@ int genformdefs(char *fname, struct ZONES *z)
 	return 1;
 }
 
-
 int main(int argc, char *argv[])
 {
 	struct FORM_STRUCT form, *formp;
@@ -343,19 +486,29 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	int zones_only = 0;
+
 	fread(sig, 3, 1, f);
-	if(strncmp(sig, "AFZ", 3)) {
+	if(!strncmp(sig, "AFZ", 3)) {
+		// nothing to do
+	}
+	else if(!strncmp(sig, "AF2", 3)) {
+		zones_only = 1;
+	}
+	else {
 		printf("ERROR: [%s] has an invalid format.\n", argv[1]);
 		fclose(f);
 		return 1;
 	}
 
-	// read enemies
-	fread(&x, 4, 1, f);
-	printf("Enemies: %d\n", x);
-	for(n = 0; n < x; ++n) {
-		fread(&en, sizeof(struct ENEMY_STRUCT) - 12 - 16, 1, f);
-		enemy_add(&e, &en);
+	if(!zones_only) {
+		// read enemies
+		fread(&x, 4, 1, f);
+		printf("Enemies: %d\n", x);
+		for(n = 0; n < x; ++n) {
+			fread(&en, sizeof(struct ENEMY_STRUCT) - 12 - 16, 1, f);
+			enemy_add(&e, &en);
+		}
 	}
 
 	// read zones
@@ -379,12 +532,57 @@ int main(int argc, char *argv[])
 		zones_add(&z, &zone);
 	}
 	fread(sig, 3, 1, f);
-	if(strncmp(sig, "AFZ", 3)) {
+	if((!zones_only && strncmp(sig, "AFZ", 3)) || (zones_only && strncmp(sig, "AF2", 3))) {
 		printf("ERROR: [%s] has an invalid format.\n", argv[1]);
 		fclose(f);
 		return 1;
 	}
 	fclose(f);
+
+	if(!readrefs_enemy("enemies.ref")) {
+		printf("ERROR: trying to read enemies.ref\n");
+		return 1;
+	}
+	if(!readrefs_zone("zones.ref")) {
+		printf("ERROR: trying to read zones.ref\n");
+		return 1;
+	}
+
+	printf("read %d enemy references.\n", enemyref_num);
+	for(n = 0; n < enemyref_num; ++n) {
+		printf("[%d] = [%s]\n", enemyref[n].index, enemyref[n].name);
+	}
+
+	printf("read %d zone references.\n", zoneref_num);
+	for(n = 0; n < zoneref_num; ++n) {
+		printf("[zone%d] -> [%d]\n", zoneref[n].num, zoneref[n].index);
+	}
+
+	if(!zones_only) {
+		// verify enemy references
+		for(n = 0; n < e.num; ++n) {
+			x = findref_enemy(e.ptr[n].name);
+			if(x == -1) {
+				printf("ERROR: no reference for enemy %d: [%s]\n", n, e.ptr[n].name);
+				return 1;
+			}
+
+			e.ptr[n].exp  = enemyref[x].exp;
+			e.ptr[n].au   = enemyref[x].au;
+			e.ptr[n].item = enemyref[x].item;
+			memcpy(e.ptr[n].ai, enemyref[x].ai, 16);
+			printf("[%s]->[%s]\n", e.ptr[n].name, enemyref[x].name);
+		}
+	}
+
+	// verify zone references
+	for(n = 0; n < z.num; ++n) {
+		x = xref_zone(n+1);
+		if(x == -1) {
+			printf("ERROR: no reference for zone:%d\n", n+1);
+			return 1;
+		}
+	}
 
 	printf("done.\n");
 
@@ -459,6 +657,155 @@ int main(int argc, char *argv[])
 				form_del(&z.ptr[n], n2);
 			}
 		}
+		else if(!strcmp(argv[2], "addenemy")) {
+			if(zones_only) {
+				printf("ERROR: cannot add enemy to zones-only file format\n");
+				return 1;
+			}
+
+			if(argc < 19) {
+				printf("usage: afzconv <.afz file> addenemy <name> <level> <hp> <sp> <str> <end> <agl> <wis> <att> <def> <spd> <mgd> <fire> <water> <wind> <weapon>\n");
+				return 1;
+			}
+
+			struct ENEMY_STRUCT en;
+			strcpy(en.name, argv[3]);
+			en.level = atoi(argv[4]);
+			en.hp = atoi(argv[5]);
+			en.sp = atoi(argv[6]);
+			en.str = atoi(argv[7]);
+			en.end = atoi(argv[8]);
+			en.agl = atoi(argv[9]);
+			en.wis = atoi(argv[10]);
+			en.att = atoi(argv[11]);
+			en.def = atoi(argv[12]);
+			en.spd = atoi(argv[13]);
+			en.mgd = atoi(argv[14]);
+			en.fire = atoi(argv[15]);
+			en.water = atoi(argv[16]);
+			en.wind = atoi(argv[17]);
+			en.weapon = atoi(argv[18]);
+
+			enemy_add(&e, &en);
+		}
+		else if(!strcmp(argv[2], "exportenemies")) {
+			if(zones_only) {
+				printf("ERROR: cannot export enemies from zones-only file format\n");
+				return 1;
+			}
+
+			FILE *out = fopen("enemies_out.ref", "w");
+			fprintf(out, "#############################################################################\n");
+			fprintf(out, "# Infinity Enemies\n");
+			fprintf(out, "#############################################################################\n");
+			fprintf(out, "#\n");
+			fprintf(out, "# All lines beginning with '#' are ignored by the program.\n");
+			fprintf(out, "#\n");
+			fprintf(out, "# Format:\n");
+			fprintf(out, "#\n");
+			fprintf(out, "# X:Name: Lvl HP SP Str End Agl Wis Att Def Spd Mgd FWAP Exp Au Item AI\n");
+			fprintf(out, "#\n");
+			fprintf(out, "#  X    = enemy number reference\n");
+			fprintf(out, "#  Name = name of enemy\n");
+			fprintf(out, "#\n");
+			fprintf(out, "#  FWAP = elemental attributes for fire (F), water (W), wind/air (A),\n");
+			fprintf(out, "#         weapon/phys (P), as a 4-character string.\n");
+			fprintf(out, "#         W=weak, S=strong, -=normal.\n");
+			fprintf(out, "#         Ex: W--S = weak against fire, strong against weapons.\n");
+			fprintf(out, "#\n");
+			fprintf(out, "#  Item = item to drop or '-'\n");
+			fprintf(out, "#\n");
+			fprintf(out, "#  AI   = optional comma-separated list of up to 16 action numbers, or '-'\n");
+			fprintf(out, "#\n");
+			fprintf(out, "#############################################################################\n");
+			fprintf(out, "\n");
+
+			fprintf(out, "# Name           Lvl   HP   SP Str End Agl Wis Att Def Spd Mgd FWAP  Exp   Au Itm AI\n");
+			fprintf(out, "# ---------------------------------------------------------------------------------------------------\n");
+			for(n = 0; n < 150; ++n) {
+				x = xfindref_enemy(n);
+				if(x == -1)
+					continue;
+
+				struct ENEMYREF *er = &enemyref[x];
+
+				// match the enemy
+				for(n2 = 0; n2 < e.num; ++n2) {
+					if(!strcmp(enemyref[x].name, e.ptr[n2].name))
+						break;
+				}
+				if(n2 >= e.num) {
+					printf("ERROR: no enemy named:%s\n", enemyref[x].name);
+					return 1;
+				}
+
+				struct ENEMY_STRUCT *en = &e.ptr[n2];
+
+				char idstr[256];
+				sprintf(idstr, "%d:%s:", er->index, en->name);
+
+				char elemstr[5];
+				strcpy(elemstr, "----");
+				elemstr[0] = elem_char(en->fire);
+				elemstr[1] = elem_char(en->water);
+				elemstr[2] = elem_char(en->wind);
+				elemstr[3] = elem_char(en->weapon);
+
+				char itemstr[256];
+				if(en->item)
+					sprintf(itemstr, "%d", en->item);
+				else
+					strcpy(itemstr, "-");
+
+				char aistr[256];
+				int pos = 0;
+				for(int k = 15; k >= 0; --k) {
+					if(en->ai[k] > 0) {
+						if(pos > 0) {
+							aistr[pos] = ',';
+							++pos;
+						}
+
+						pos += sprintf(aistr + pos, "%d", en->ai[k]);
+					}
+				}
+				aistr[pos] = 0;
+				if(pos == 0)
+					strcpy(aistr, "-");
+
+				fprintf(out, "%-17s %2d %4d %4d %3d %3d %3d %3d %3d %3d %3d %3d %s %4d %4d %3s %s\n", idstr, en->level, en->hp, en->sp, en->str, en->end, en->agl, en->wis, en->att, en->def, en->spd, en->mgd, elemstr, en->exp, en->au, itemstr, aistr);
+			}
+			fclose(out);
+			printf("wrote enemies_out.ref\n");
+			return 0;
+		}
+		else if(!strcmp(argv[2], "converttozonesonly")) {
+			if(zones_only) {
+				printf("ERROR: file format is already zones-only\n");
+				return 1;
+			}
+
+			zones_only = 1;
+
+			// use enemies.ref indexes instead of afz indexes
+			for(n = 0; n < z.num; ++n) {
+				for(int k = 0; k < z.ptr[n].numforms; ++k) {
+					struct FORM_STRUCT *formp = &z.ptr[n].ptr[k];
+
+					for(int j = 4; j < 12; ++j) {
+						if(formp->guy_active[j]) {
+							int s = formp->guy_type[j]-1; // get afz index
+							x = findref_enemy(e.ptr[s].name); // find enemies.ref entry by name
+							if(x == -1) {
+								printf("ERROR: no reference for enemy %d: [%s]\n", s, e.ptr[s].name);
+								return 1;
+							}
+							formp->guy_type[j] = enemyref[x].index + 1; // set enemies.ref index
+						}
+					}
+				}
+			}
+		}
 		else {
 			printf("no such command: [%s]\n", argv[2]);
 		}
@@ -470,71 +817,47 @@ int main(int argc, char *argv[])
 
 		f = fopen("result.afz", "wb");
  
-                // write signature
-                fwrite("AFZ", 3, 1, f);
- 
-                // write enemies
-                fwrite(&e.num, 4, 1, f);
-                for(n = 0; n < e.num; ++n) {
-                        fwrite(&e.ptr[n], sizeof(struct ENEMY_STRUCT) - 12 - 16, 1, f);
-                }
- 
-                // write zones
-                fwrite(&z.num, 4, 1, f);
-                for(n = 0; n < z.num; ++n) {
-                        fwrite(&z.ptr[n], sizeof(struct ZONE_STRUCT), 1, f);
-                        for(n2 = 0; n2 < z.ptr[n].numforms; ++n2) {
-                                fwrite(&z.ptr[n].ptr[n2], sizeof(struct FORM_STRUCT), 1, f);
-                        }
-                }
-                fwrite("AFZ", 3, 1, f);
-                fclose(f);
- 
-                printf("Changes saved.\n");
-		return 1;
-	}
+		if(zones_only) {
+			// write signature
+			fwrite("AF2", 3, 1, f);
 
-	if(!readrefs_enemy("enemies.ref")) {
-		printf("ERROR: trying to read enemies.ref\n");
-		return 1;
-	}
-	if(!readrefs_zone("zones.ref")) {
-		printf("ERROR: trying to read zones.ref\n");
-		return 1;
-	}
+			// write zones
+			fwrite(&z.num, 4, 1, f);
+			for(n = 0; n < z.num; ++n) {
+					fwrite(&z.ptr[n], ZONE_STRUCT_SIZE, 1, f);
+					for(n2 = 0; n2 < z.ptr[n].numforms; ++n2) {
+							fwrite(&z.ptr[n].ptr[n2], sizeof(struct FORM_STRUCT), 1, f);
+					}
+			}
 
-	printf("read %d enemy references.\n", enemyref_num);
-	for(n = 0; n < enemyref_num; ++n) {
-		printf("[%d] = [%s]\n", enemyref[n].index, enemyref[n].name);
-	}
+			fwrite("AF2", 3, 1, f);
+			fclose(f);
+		}
+		else {
+			// write signature
+			fwrite("AFZ", 3, 1, f);
 
-	printf("read %d zone references.\n", zoneref_num);
-	for(n = 0; n < zoneref_num; ++n) {
-		printf("[zone%d] -> [%d]\n", zoneref[n].num, zoneref[n].index);
-	}
+			// write enemies
+			fwrite(&e.num, 4, 1, f);
+			for(n = 0; n < e.num; ++n) {
+					fwrite(&e.ptr[n], sizeof(struct ENEMY_STRUCT) - 12 - 16, 1, f);
+			}
 
-	// verify enemy references
-	for(n = 0; n < e.num; ++n) {
-		x = findref_enemy(e.ptr[n].name);
-		if(x == -1) {
-			printf("ERROR: no reference for enemy %d: [%s]\n", n, e.ptr[n].name);
-			return 1;
+			// write zones
+			fwrite(&z.num, 4, 1, f);
+			for(n = 0; n < z.num; ++n) {
+					fwrite(&z.ptr[n], ZONE_STRUCT_SIZE, 1, f);
+					for(n2 = 0; n2 < z.ptr[n].numforms; ++n2) {
+							fwrite(&z.ptr[n].ptr[n2], sizeof(struct FORM_STRUCT), 1, f);
+					}
+			}
+
+			fwrite("AFZ", 3, 1, f);
+			fclose(f);
 		}
 
-		e.ptr[n].exp  = enemyref[x].exp;
-		e.ptr[n].au   = enemyref[x].au;
-		e.ptr[n].item = enemyref[x].item;
-		memcpy(e.ptr[n].ai, enemyref[x].ai, 16);
-		printf("[%s]->[%s]\n", e.ptr[n].name, enemyref[x].name);
-	}
-
-	// verify zone references
-	for(n = 0; n < z.num; ++n) {
-		x = xref_zone(n+1);
-		if(x == -1) {
-			printf("ERROR: no reference for zone:%d\n", n+1);
-			return 1;
-		}
+		printf("Changes saved.\n");
+		return 1;
 	}
 
 	//out = stdout;
@@ -605,25 +928,60 @@ int main(int argc, char *argv[])
 			fprintf(out, "    eblank\n");
 		}
 		else {
-			// match the enemy
-			for(n2 = 0;; ++n2) {
-				if(!strcmp(enemyref[x].name, e.ptr[n2].name))
-					break;
-			}
-			x = n2;
+			struct ENEMY_STRUCT tmp;
+			struct ENEMY_STRUCT *en;
 
-			fprintf(out, "    ; %s - %d exp, %d au\n", e.ptr[x].name, e.ptr[x].exp, e.ptr[x].au);
-			fprintf(out, "    e(%2d,%2d,%2d,  %2d,%2d,%2d,%2d)\n", e.ptr[x].level, e.ptr[x].hp, e.ptr[x].sp, e.ptr[x].str, e.ptr[x].end, e.ptr[x].agl, e.ptr[x].wis);
-			fprintf(out, "    a(%2d,%2d,%2d,%2d)\n", e.ptr[x].att, e.ptr[x].def, e.ptr[x].spd, e.ptr[x].mgd);
-			fprintf(out, "    z(%2d)\n", e.ptr[x].item);
+			if(zones_only) {
+				struct ENEMYREF *er = &enemyref[x];
+
+				strcpy(tmp.name, er->name);
+				tmp.level = er->level;
+				tmp.hp = er->hp;
+				tmp.sp = er->sp;
+				tmp.str = er->str;
+				tmp.end = er->end;
+				tmp.agl = er->agl;
+				tmp.wis = er->wis;
+				tmp.att = er->att;
+				tmp.def = er->def;
+				tmp.spd = er->spd;
+				tmp.mgd = er->mgd;
+				tmp.fire = er->fire;
+				tmp.water = er->water;
+				tmp.wind = er->wind;
+				tmp.weapon = er->weapon;
+				tmp.exp = er->exp;
+				tmp.au = er->au;
+				tmp.item = er->item;
+				memcpy(tmp.ai, er->ai, sizeof(tmp.ai));
+
+				en = &tmp;
+			} else {
+				// match the enemy
+				for(n2 = 0; n2 < e.num; ++n2) {
+					if(!strcmp(enemyref[x].name, e.ptr[n2].name))
+						break;
+				}
+				if(n2 >= e.num) {
+					printf("ERROR: no enemy named:%s\n", enemyref[x].name);
+					return 1;
+				}
+
+				en = &e.ptr[n2];
+			}
+
+			fprintf(out, "    ; %s - %d exp, %d au\n", en->name, en->exp, en->au);
+			fprintf(out, "    e(%2d,%2d,%2d,  %2d,%2d,%2d,%2d)\n", en->level, en->hp, en->sp, en->str, en->end, en->agl, en->wis);
+			fprintf(out, "    a(%2d,%2d,%2d,%2d)\n", en->att, en->def, en->spd, en->mgd);
+			fprintf(out, "    z(%2d)\n", en->item);
 			fprintf(out, "    db ");
 			for(n2 = 0; n2 < 16; ++n2) {
 				if(n2 != 0)
 					fprintf(out, ",");
-				fprintf(out, "%2d", e.ptr[x].ai[n2]);
+				fprintf(out, "%2d", en->ai[n2]);
 			}
 			fprintf(out, "\n");
-			fprintf(out, "    db %d,%d,%d,%d\n", e.ptr[x].weapon, e.ptr[x].fire, e.ptr[x].water, e.ptr[x].wind);
+			fprintf(out, "    db %d,%d,%d,%d\n", en->weapon, en->fire, en->water, en->wind);
 
 			fprintf(out, "\n");
 		}
@@ -652,9 +1010,22 @@ int main(int argc, char *argv[])
 				}
 				x = x - 1 + base_enemy;
 
-				exp += e.ptr[x].exp;
-				au  += e.ptr[x].au;
-				y   += e.ptr[x].level;
+				if(zones_only) {
+					x = xfindref_enemy(x);
+					if(x == -1) {
+						printf("ERROR: no enemy with index %d\n", x);
+						return 1;
+					}
+
+					exp += enemyref[x].exp;
+					au  += enemyref[x].au;
+					y   += enemyref[x].level;
+				} else {
+					exp += e.ptr[x].exp;
+					au  += e.ptr[x].au;
+					y   += e.ptr[x].level;
+				}
+
 				++num;
 			}
 		}
@@ -668,7 +1039,11 @@ int main(int argc, char *argv[])
 		for(n2 = 4; n2 < 12; ++n2) {
 			if(formp->guy_active[n2]) {
 				x = formp->guy_type[n2]-1;
-				x = findref_enemy(e.ptr[x].name);
+				if(zones_only) {
+					x = xfindref_enemy(x);
+				} else {
+					x = findref_enemy(e.ptr[x].name);
+				}
 
 				fprintf(out, "    be(%2d, %2d,%2d)\n", enemyref[x].index + base_enemy, formp->guy_x[n2], formp->guy_y[n2]);
 			}
