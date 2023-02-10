@@ -1,0 +1,12 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+SortIncludes: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterFunction: true
+AlignArrayOfStructures: Right
+AlignConsecutiveMacros: true
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty

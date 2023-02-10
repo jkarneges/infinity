@@ -16,7 +16,7 @@
  * package.
  */
 
-#include<gb.h>
+#include <gb.h>
 void memcpy(void *dest, void *src, UWORD size);
 void memset(void *dest, UBYTE c, UWORD size);
 UBYTE rom_page(UBYTE page);
@@ -24,35 +24,36 @@ UBYTE ram_page(UBYTE page);
 
 #define play_sfx(num) SOUNDLIB_sfx(num)
 
-#include"eve/sfx.h"
-#include"eve/itemdefs.h"
+#include "eve/sfx.h"
+#include "eve/itemdefs.h"
 
 //-- global flags --
-#define DEBUG_I18N            // debug internationalization (dialog: press B to switch language)
-#define DEBUG_BATTLES         // debug battles (map: press B to turn off encouters+walk thru walls, battles: press SELECT to win)
-//#define NO_MUSIC        1   // turn off music
+#define DEBUG_I18N    // debug internationalization (dialog: press B to switch language)
+#define DEBUG_BATTLES // debug battles (map: press B to turn off encouters+walk thru walls, battles: press SELECT to
+                      // win)
+// #define NO_MUSIC        1   // turn off music
 
-#define IT_HPLo         1
-#define IT_SPLo         2
-#define IT_HALo         3
-#define IT_LFLo         4
-#define IT_HPMd         5
-#define IT_SPMd         6
-#define IT_HAMd         7
-#define IT_LFMd         8
-#define IT_HPHi         9
-#define IT_SPHi         10
-#define IT_HAHi         11
-#define IT_LFHi         12
+#define IT_HPLo 1
+#define IT_SPLo 2
+#define IT_HALo 3
+#define IT_LFLo 4
+#define IT_HPMd 5
+#define IT_SPMd 6
+#define IT_HAMd 7
+#define IT_LFMd 8
+#define IT_HPHi 9
+#define IT_SPHi 10
+#define IT_HAHi 11
+#define IT_LFHi 12
 
-#define SPRBASE_HERO 0
-#define SPRBASE_ENEMY   6
+#define SPRBASE_HERO  0
+#define SPRBASE_ENEMY 6
 
-#define  OWE_PAGE 1
-#define OWE2_PAGE       2
-#define DATA_PAGE 3
+#define OWE_PAGE     1
+#define OWE2_PAGE    2
+#define DATA_PAGE    3
 #define DATA2_PAGE   4
-#define MENU_PAGE 5
+#define MENU_PAGE    5
 #define MENU2_PAGE   6
 #define BATTLE_PAGE  7
 #define BATTLE2_PAGE 8
@@ -60,175 +61,171 @@ UBYTE ram_page(UBYTE page);
 #define BATTLE4_PAGE 10
 #define BATTLE5_PAGE 11
 #define BATTLE6_PAGE 12
-#define DFS_PAGE  13
+#define DFS_PAGE     13
 #define TITLE_PAGE   14
-#define ZONE_PAGE 15
+#define ZONE_PAGE    15
 #define EFORM_PAGE   16
 #define EVENT_PAGE   17
-#define TEXT_PAGE 21
+#define TEXT_PAGE    21
 #define TABLE_PAGE   28
 
-#define MGS_EX    4
-#define MGS_CH    16
-#define MGS_NUM      20
+#define MGS_EX  4
+#define MGS_CH  16
+#define MGS_NUM 20
 
-#define GEMS_INDEX   100
-#define GOLD_INDEX   116
+#define GEMS_INDEX 100
+#define GOLD_INDEX 116
 
-#define CONNOR    0
-#define RYAN      1
-#define ELYA      2
-#define VICTOR    3
-#define ROLAND    4
-#define ALUTHA          5
-#define VICTOR_WOLF  6
+#define CONNOR      0
+#define RYAN        1
+#define ELYA        2
+#define VICTOR      3
+#define ROLAND      4
+#define ALUTHA      5
+#define VICTOR_WOLF 6
 
-#define BOSS      100
+#define BOSS 100
 
 #define TYPE_BOAT 172
 
 // NOTE! opal not used
-#define GEM_RUBY  0
-#define GEM_CORAL 1
-#define GEM_EMERALD  2
-#define GEM_DIAMOND  3
-#define GEM_SAPPHIRE 4
-#define GEM_OPAL  5
-#define GEM_AMETHYST 6
-#define GEM_GARNET   7
-#define GEM_CRYSTAL  8
-#define GEM_JADE  9
-#define GEM_ONYX  10
-#define GEM_PEARL 11
-#define GEM_AQUAMARINE  12
-#define GEM_TURQUIOSE   13
-#define GEM_CARNELIAN   14
-#define GEM_MOONSTONE   15
+#define GEM_RUBY       0
+#define GEM_CORAL      1
+#define GEM_EMERALD    2
+#define GEM_DIAMOND    3
+#define GEM_SAPPHIRE   4
+#define GEM_OPAL       5
+#define GEM_AMETHYST   6
+#define GEM_GARNET     7
+#define GEM_CRYSTAL    8
+#define GEM_JADE       9
+#define GEM_ONYX       10
+#define GEM_PEARL      11
+#define GEM_AQUAMARINE 12
+#define GEM_TURQUIOSE  13
+#define GEM_CARNELIAN  14
+#define GEM_MOONSTONE  15
 
-#define COLOR_BLACK  0
-#define COLOR_WHITE  1
-#define COLOR_RED 2
-#define COLOR_BLUE   3
-#define COLOR_YELLOW 4
-#define COLOR_BLUEDARK  5
-#define COLOR_GRDKISLE  0xFF
+#define COLOR_BLACK    0
+#define COLOR_WHITE    1
+#define COLOR_RED      2
+#define COLOR_BLUE     3
+#define COLOR_YELLOW   4
+#define COLOR_BLUEDARK 5
+#define COLOR_GRDKISLE 0xFF
 
-#define I_HPLO    1
-#define I_HPHI    2
-#define I_SPLO    3
-#define I_HPSP    4
+#define I_HPLO 1
+#define I_HPHI 2
+#define I_SPLO 3
+#define I_HPSP 4
 
 #define ICON_BASE 24
 
-#define NUMKEYS      8
-#define KEYDELAY  8
+#define NUMKEYS  8
+#define KEYDELAY 8
 
 /* control defines */
-#define DELAY           1
+#define DELAY     1
 #define MENUDELAY 10
-#define MOVESPEED       2
-//#define MOVESPEED  1
+#define MOVESPEED 2
+// #define MOVESPEED  1
 
-#define WID             8
-#define ANIMSPEED       4
+#define WID       8
+#define ANIMSPEED 4
 
-#define NUM_MOVES       4
-#define NUM_MOVES_NPC   8
+#define NUM_MOVES     4
+#define NUM_MOVES_NPC 8
 
-//#define NUM_MOVES  8
-//#define NUM_MOVES_NPC 16
+// #define NUM_MOVES  8
+// #define NUM_MOVES_NPC 16
 
 /* defines */
-#define UP              0
-#define DOWN            1
-#define LEFT            2
-#define RIGHT           3
+#define UP    0
+#define DOWN  1
+#define LEFT  2
+#define RIGHT 3
 
-#define ENTER           4
-#define CANCEL          5
-#define MENU      6
-#define SELECT    7
+#define ENTER  4
+#define CANCEL 5
+#define MENU   6
+#define SELECT 7
 
-#define NORM            0
-#define MOVE            1
-#define STILL     2
-#define FRAME     3
+#define NORM  0
+#define MOVE  1
+#define STILL 2
+#define FRAME 3
 
-#define PLAYER          0
-#define PARTY           1
-#define WALK            2
-#define STAND           3
-#define BOAT      4
-
+#define PLAYER 0
+#define PARTY  1
+#define WALK   2
+#define STAND  3
+#define BOAT   4
 
 // search flags
-#define SR_UP     1
-#define SR_DOWN      2
-#define SR_LEFT      4
-#define SR_RIGHT  8
-
+#define SR_UP    1
+#define SR_DOWN  2
+#define SR_LEFT  4
+#define SR_RIGHT 8
 
 #define BATTLE_WIN      0
 #define BATTLE_LOSE     1
 #define BATTLE_RESCUE   2
 #define BATTLE_DEMOSKIP 3
 
-
 // must match edefs.h
 #define VAR_EVEPROG 0
-
 
 /* structs */
 
 struct DUDESTAT {
-   UBYTE name[9];
-   UBYTE class[9];
-   UBYTE type;
-   WORD hp, hpmax;
-   WORD sp, spmax;
+    UBYTE name[9];
+    UBYTE class[9];
+    UBYTE type;
+    WORD hp, hpmax;
+    WORD sp, spmax;
 
-   UBYTE level;
-   UBYTE exp[3];
+    UBYTE level;
+    UBYTE exp[3];
 
-   UBYTE wolfpow;
-   UBYTE pad[2];
+    UBYTE wolfpow;
+    UBYTE pad[2];
 
-   UBYTE att, def, spd, man;
-   UBYTE str, end, agl, wis;
+    UBYTE att, def, spd, man;
+    UBYTE str, end, agl, wis;
 
-   UBYTE e[4]; // wep, arm, acc, gem
-   UBYTE skl[4];
+    UBYTE e[4]; // wep, arm, acc, gem
+    UBYTE skl[4];
 };
 
 struct DUDESTRUCT {
-   UBYTE active;  // is this entry active?
-        WORD gx,gy;  // pixel x, y, z
-        BYTE gz;
-        BYTE pad;
- //       WORD x, y; // tile x, y
-   UBYTE x, y;
-        BYTE dir; // direction facing
-        WORD frame;  // current frame
-        UBYTE mode;  // current mode
-        WORD count;  // allpurpose counter
-        BYTE req; // mode change being requested
-        UBYTE type;  // dude type
-        BYTE control;   // PLAYER, PARTY, etc
-   UBYTE framemode, animmode;
+    UBYTE active; // is this entry active?
+    WORD gx, gy;  // pixel x, y, z
+    BYTE gz;
+    BYTE pad;
+    //       WORD x, y; // tile x, y
+    UBYTE x, y;
+    BYTE dir;     // direction facing
+    WORD frame;   // current frame
+    UBYTE mode;   // current mode
+    WORD count;   // allpurpose counter
+    BYTE req;     // mode change being requested
+    UBYTE type;   // dude type
+    BYTE control; // PLAYER, PARTY, etc
+    UBYTE framemode, animmode;
 };
 
 struct BRE {
-   UBYTE current;
-   UBYTE error;
-   UBYTE step_whole;
-   UBYTE step_error;
-   UBYTE sign;
-   UBYTE steps;
+    UBYTE current;
+    UBYTE error;
+    UBYTE step_whole;
+    UBYTE step_error;
+    UBYTE sign;
+    UBYTE steps;
 };
 
 struct BRW {
-   UBYTE part, error;
-   WORD sign, whole, current;
+    UBYTE part, error;
+    WORD sign, whole, current;
 };
 
 /* OWE (overworld engine) */
@@ -259,7 +256,6 @@ UBYTE map_getzone(UBYTE x, UBYTE y);
 void slm_setx(UBYTE window, UBYTE x);
 void slm_init();
 void slm_off();
-
 
 /* BX (battle transitions) */
 void bx_init();
@@ -338,14 +334,14 @@ UBYTE *lead(UBYTE *p);
 
 void mgs_init();
 void mgs_slm();
-void mgs_setwin(UBYTE    x, UBYTE y         );
-void mgs_sput  (UBYTE slot, UBYTE x, UBYTE y);
-void mgs_shide (UBYTE slot                  );
-void mgs_update(UBYTE slot                  );
+void mgs_setwin(UBYTE x, UBYTE y);
+void mgs_sput(UBYTE slot, UBYTE x, UBYTE y);
+void mgs_shide(UBYTE slot);
+void mgs_update(UBYTE slot);
 void mgs_schg(UBYTE slot, UBYTE n);
-void mgs_sload(UBYTE slot, UBYTE type, UBYTE dir, UBYTE frame);   // load character
-void mgs_wload(UBYTE slot, UBYTE n, UBYTE pal);       // load wingdings
-void mgs_gload(UBYTE slot, UBYTE n);            // load gem
+void mgs_sload(UBYTE slot, UBYTE type, UBYTE dir, UBYTE frame); // load character
+void mgs_wload(UBYTE slot, UBYTE n, UBYTE pal);                 // load wingdings
+void mgs_gload(UBYTE slot, UBYTE n);                            // load gem
 void mgs_shift(UBYTE zone, UBYTE dist, UBYTE y);
 void mgs_setpal(UBYTE slot, UBYTE pal);
 UBYTE mgs_getpal(UBYTE slot);
@@ -425,7 +421,6 @@ void f_memcpy(UBYTE *dest, UBYTE *src, UBYTE page, UWORD size);
 void f_prophecy();
 void f_poem();
 
-
 // bre
 void bre_setup(UBYTE src, UBYTE dest, UBYTE steps, struct BRE *bre);
 UBYTE bre_step(struct BRE *bre);
@@ -472,146 +467,144 @@ void f_loadgame(UBYTE slot);
 
 // battle defs
 #define RUP    3
-#define RDOWN     0
-#define RLEFT     1
-#define RRIGHT    2
+#define RDOWN  0
+#define RLEFT  1
+#define RRIGHT 2
 
-#define BDIR_UP      0
-#define BDIR_UPRIGHT 1
-#define BDIR_DOWNRIGHT  2
-#define BDIR_DOWN 3
-#define BDIR_DOWNLEFT   4
-#define BDIR_UPLEFT  5
+#define BDIR_UP        0
+#define BDIR_UPRIGHT   1
+#define BDIR_DOWNRIGHT 2
+#define BDIR_DOWN      3
+#define BDIR_DOWNLEFT  4
+#define BDIR_UPLEFT    5
 
-#define BACT_NORM 0
-#define  BACT_WALK   1
+#define BACT_NORM    0
+#define BACT_WALK    1
 #define BACT_ATTACK  2
-#define BACT_HURT 3
-#define BACT_JUMP 5
+#define BACT_HURT    3
+#define BACT_JUMP    5
 #define BACT_SCRATCH 6
-#define BACT_POOF 7
+#define BACT_POOF    7
 #define BACT_CLOSE   8
-#define BACT_MISS 9
-#define BACT_CAST 10
-#define BACT_CURE 11
-#define BACT_FIRE 12
+#define BACT_MISS    9
+#define BACT_CAST    10
+#define BACT_CURE    11
+#define BACT_FIRE    12
 #define BACT_QUAKE   13
-#define BACT_LEAP 14
-#define BACT_JOLT 15
+#define BACT_LEAP    14
+#define BACT_JOLT    15
 #define BACT_TIDAL   16
 #define BACT_PANEL   17
 #define BACT_THROW   18
 #define BACT_ARROW   19
 #define BACT_PULLBOW 20
 #define BACT_SPARKLE 21
-#define BACT_WAKE 22
+#define BACT_WAKE    22
 #define BACT_SLURP   23
 #define BACT_SPAWN   24
 #define BACT_CHARM   25
-#define BACT_SLASH      26
-#define BACT_WHIRL      27
-#define BACT_DAMAGE     28
-#define BACT_EFFECT     29
+#define BACT_SLASH   26
+#define BACT_WHIRL   27
+#define BACT_DAMAGE  28
+#define BACT_EFFECT  29
 
+#define BATR_NONE  0
+#define BATR_FIRE  1
+#define BATR_WATER 2
+#define BATR_WIND  3
+#define BATR_HEAL  4
+#define BATR_HAND  5
 
-#define BATR_NONE 0
-#define BATR_FIRE 1
-#define BATR_WATER   2
-#define BATR_WIND 3
-#define BATR_HEAL 4
-#define BATR_HAND 5
-
-#define BAIL_CHARM   1
-#define BAIL_POISON  2
-#define BAIL_WOLF       3
+#define BAIL_CHARM  1
+#define BAIL_POISON 2
+#define BAIL_WOLF   3
 
 #define BMOVESPEED   16
 #define BATTACKSPEED 4
 #define BJUMPSPEED   9
 
-#define BPLAYER      0
-#define BCPU      1
+#define BPLAYER 0
+#define BCPU    1
 
-//#define MAXACTIONS 10
+// #define MAXACTIONS 10
 
 #define B_OVERLAY 128
-#define B_BANK1      64
-#define B_WDPAL      6
+#define B_BANK1   64
+#define B_WDPAL   6
 
-#define BFRAME_ATTACK   16
+#define BFRAME_ATTACK 16
 
-#define BWEAK     0
-#define BSTRONG      2
+#define BWEAK   0
+#define BSTRONG 2
 
 struct BSTAT {
-   UBYTE level;
-   WORD hp, hpmax;
-   WORD sp, spmax;
-   UBYTE str, end, agl, wis;
-   UBYTE att, def, spd, man;
-   UBYTE item;
-   UBYTE ai[16];
-   UBYTE attrib[4];
+    UBYTE level;
+    WORD hp, hpmax;
+    WORD sp, spmax;
+    UBYTE str, end, agl, wis;
+    UBYTE att, def, spd, man;
+    UBYTE item;
+    UBYTE ai[16];
+    UBYTE attrib[4];
 };
 
 struct BDUDE {
-   UBYTE rep;
-   UBYTE active;
+    UBYTE rep;
+    UBYTE active;
 
-   WORD rx, ry;
-   UBYTE rz;
-   BYTE x, y;
-   UBYTE type;
-   UBYTE frame;
-   UBYTE action;
-   UBYTE count;
-   UBYTE progress;
-   UBYTE control;
-   UBYTE dir;
+    WORD rx, ry;
+    UBYTE rz;
+    BYTE x, y;
+    UBYTE type;
+    UBYTE frame;
+    UBYTE action;
+    UBYTE count;
+    UBYTE progress;
+    UBYTE control;
+    UBYTE dir;
 
-   // stat stuff
-   struct BSTAT st;
-   WORD damage;
+    // stat stuff
+    struct BSTAT st;
+    WORD damage;
 
-   // bline
-   struct BRW brw_x;
-   struct BRW brw_y;
+    // bline
+    struct BRW brw_x;
+    struct BRW brw_y;
 
-   // jumping
-   BYTE dz;
+    // jumping
+    BYTE dz;
 
-   // backup
-   UBYTE olddir;
+    // backup
+    UBYTE olddir;
 
+    // active battle
+    UBYTE recover;
+    BYTE points;
+    UBYTE target; // who to hit?
+    UBYTE poof;   // flagged for poof?
+    UBYTE boss;   // 2x2 big character?
+    UBYTE spawnlord;
+    UBYTE slider;
+    UBYTE ail;
+    UWORD ailtime;
 
-   // active battle
-   UBYTE recover;
-   BYTE points;
-   UBYTE target;     // who to hit?
-   UBYTE poof;    // flagged for poof?
-   UBYTE boss;    // 2x2 big character?
-   UBYTE spawnlord;
-   UBYTE slider;
-   UBYTE ail;
-   UWORD ailtime;
-
-   UBYTE skl[4];
-   UBYTE gem, gemcount, gemshow;
-   UBYTE spflag;
-   UBYTE flags;            // for bosses
+    UBYTE skl[4];
+    UBYTE gem, gemcount, gemshow;
+    UBYTE spflag;
+    UBYTE flags; // for bosses
 };
 
 struct BCHAIN {
-   UBYTE guy;
-   UBYTE action;
-   UBYTE dir;
-   WORD arg1, arg2, arg3;
+    UBYTE guy;
+    UBYTE action;
+    UBYTE dir;
+    WORD arg1, arg2, arg3;
 };
 
 struct BPRO {
-   WORD rx, ry;
-   struct BRW brw_x;
-   struct BRW brw_y;
+    WORD rx, ry;
+    struct BRW brw_x;
+    struct BRW brw_y;
 };
 
 // chain system
@@ -626,7 +619,7 @@ UBYTE f_get_4waydir(UBYTE bdir);
 void f_text_update();
 UBYTE f_gain_level(struct DUDESTAT *st);
 void f_load_skill(UBYTE x);
-//UBYTE f_get_4waydir(UBYTE bdir);
+// UBYTE f_get_4waydir(UBYTE bdir);
 void f_baction_poof(UBYTE guy);
 
 // yet more
@@ -704,12 +697,12 @@ void bicon_shrink();
 void bicon_refresh(UBYTE x);
 
 // bcur
-#define BCUR_NUM     2
+#define BCUR_NUM 2
 
-#define BCUR_OFF        0
-#define BCUR_FREEZE  1
-#define BCUR_WIGGLE  2
-#define BCUR_LOCKON  3
+#define BCUR_OFF    0
+#define BCUR_FREEZE 1
+#define BCUR_WIGGLE 2
+#define BCUR_LOCKON 3
 
 void f_bcur_init();
 void f_bcur_dest();
@@ -762,15 +755,12 @@ void f_draw_dudes();
 void f_resync();
 void f_lose();
 
-
 #define BOSS_COMPACT 0x01
 
-struct BOSSDATA
-{
-   UWORD pal[8];
-   UBYTE flags;
+struct BOSSDATA {
+    UWORD pal[8];
+    UBYTE flags;
 };
-
 
 WORD getsin(BYTE angle);
 WORD getcos(BYTE angle);
@@ -780,7 +770,6 @@ void f_getdistxy(WORD xlen, WORD ylen, UBYTE dist);
 
 BYTE f_get_action2();
 
-
 void end_init();
 void end_next();
 void end_deinit();
@@ -788,6 +777,4 @@ void end_deinit();
 void f_setbosspal();
 void f_setaluthapal(UBYTE map);
 
-
 void f_viewcutscene(UBYTE scene);
-

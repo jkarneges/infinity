@@ -16,11 +16,11 @@
  * package.
  */
 
-#include"defs.h"
-#include"vars.h"
+#include "defs.h"
+#include "vars.h"
 
 #include "data/menugfx.h"
-//#include "data/menugfxp.h"
+// #include "data/menugfxp.h"
 #include "data/menuwing.h"
 #include "data/dudepal.h"
 #include "data/dudepal2.h"
@@ -43,19 +43,6 @@
 #include "data/staff1.h"
 
 char area_name[][16] = {
-   "Selera",
-   "Kassim Oasis",
-   "Wayferer's Rest",
-   "Turren",
-   "Holbrooke",
-   "Tagel Sewers",
-   "Fairport",
-   "Magi Shores",
-   "Tower of Magi",
-   "Overworld",
-   "Alutha Castle",
-   "Snow Cottage",
-   "Sand Temple",
-   "Great Dark",
+    "Selera",      "Kassim Oasis",  "Wayferer's Rest", "Turren",        "Holbrooke",    "Tagel Sewers", "Fairport",
+    "Magi Shores", "Tower of Magi", "Overworld",       "Alutha Castle", "Snow Cottage", "Sand Temple",  "Great Dark",
 };
-

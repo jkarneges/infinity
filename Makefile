@@ -5,6 +5,9 @@ builddir:
 	mkdir -p build
 	mkdir -p source/data
 
+fmt:
+	clang-format -i source/*.c source/defs.h source/events.h source/events_def.h
+
 clean:
 	rm -f resource/eve/itemdefs.h
 	rm -f source/eve/itemdefs.h
